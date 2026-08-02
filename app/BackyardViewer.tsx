@@ -43,17 +43,24 @@ const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: stri
 };
 
 const VIEWS: { id: ViewName; label: string }[] = [
-  { id: "hero", label: "Hero" },
+  { id: "hero", label: "Patio hero" },
   { id: "plan", label: "Plan" },
   { id: "bbq", label: "Cook zone" },
   { id: "firepit", label: "Firepit" },
   { id: "seating", label: "Seating" },
 ];
 
-const REFERENCE_IMAGES = Array.from({ length: 10 }, (_, index) => ({
-  src: `/reference/photo-${index + 1}.webp`,
-  label: index < 8 ? `Existing yard · view ${index + 1}` : `Client markup · view ${index - 7}`,
-}));
+const REFERENCE_IMAGES = [
+  ...Array.from({ length: 8 }, (_, index) => ({
+    src: `/reference/photo-${index + 1}.webp`,
+    label: `Existing yard · view ${index + 1}`,
+  })),
+  { src: "/reference/photo-9.webp", label: "Client markup · patio and feature study" },
+  { src: "/reference/photo-10.webp", label: "Client markup · paver and perimeter study" },
+  { src: "/reference/photo-11.webp", label: "Covered patio · looking into project" },
+  { src: "/reference/photo-12.webp", label: "Back wall · looking toward patio" },
+  { src: "/reference/photo-13.webp", label: "Patio · looking across turf and BBQ" },
+];
 
 declare global {
   interface Window {
@@ -364,11 +371,11 @@ function initializeViewer(
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(860, 900), materials.ground);
   ground.rotation.x = -Math.PI / 2;
-  ground.position.set(120, -1.2, 150);
+  ground.position.set(162, -1.2, 150);
   ground.receiveShadow = true;
   context.add(ground);
   const grid = new THREE.GridHelper(720, 60, 0x88745f, 0x554d43);
-  grid.position.set(120, -0.8, 165);
+  grid.position.set(162, -0.8, 165);
   const gridMaterial = grid.material as THREE.Material;
   gridMaterial.transparent = true;
   gridMaterial.opacity = 0.16;
@@ -377,27 +384,27 @@ function initializeViewer(
   // Photo-calibrated site context. These masses describe the visible house and walls;
   // only the supplied paver/feature dimensions are presented as field measurements.
   planBox(context, -102, -96, -126, 510, 66, 0, materials.wall);
-  planBox(context, 336, 342, -126, 510, 66, 0, materials.wall);
-  planBox(context, -96, 336, 504, 510, 66, 0, materials.wall);
+  planBox(context, 420, 426, -126, 510, 66, 0, materials.wall);
+  planBox(context, -96, 420, 504, 510, 66, 0, materials.wall);
   for (let z = -102; z < 504; z += 24) {
     box(context, 0.8, 62, 0.8, -95.5, 31, z, materials.black);
-    box(context, 0.8, 62, 0.8, 335.5, 31, z, materials.black);
+    box(context, 0.8, 62, 0.8, 419.5, 31, z, materials.black);
   }
-  for (let x = -72; x < 336; x += 24) box(context, 0.8, 62, 0.8, x, 31, 503.5, materials.black);
+  for (let x = -72; x < 420; x += 24) box(context, 0.8, 62, 0.8, x, 31, 503.5, materials.black);
 
   const house = new THREE.Group();
   house.name = "House context · photo-derived massing";
   context.add(house);
-  planBox(house, 68, 306, -224, -126, 92, 0, materials.stucco);
-  planBox(house, 276, 336, -126, 78, 92, 0, materials.stucco);
-  box(house, 252, 9, 116, 187, 96.5, -174, materials.roof);
-  box(house, 78, 9, 224, 306, 96.5, -22, materials.roof);
+  planBox(house, 42, 338, -224, -126, 92, 0, materials.stucco);
+  planBox(house, 276, 420, -126, -8, 92, 0, materials.stucco);
+  box(house, 310, 9, 116, 190, 96.5, -174, materials.roof);
+  box(house, 160, 9, 130, 348, 96.5, -69, materials.roof);
   // Rear patio roof and columns visible in the supplied images.
   box(house, 190, 7, 68, 186, 92, -92, materials.roof);
   [[102, -62], [270, -62]].forEach(([x, z]) => box(house, 6, 88, 6, x, 44, z, materials.stucco));
   box(house, 68, 48, 1.2, 142, 51, -125.3, materials.glass);
   box(house, 44, 48, 1.2, 224, 51, -125.3, materials.glass);
-  box(house, 1.2, 44, 48, 275.3, 52, 16, materials.glass);
+  box(house, 1.2, 44, 48, 276.7, 52, -48, materials.glass);
   [130, 158, 218, 242].forEach((x) => box(house, 2, 55, 2, x, 52, -124, materials.counter));
 
   const siteVegetation = new THREE.Group();
@@ -408,13 +415,13 @@ function initializeViewer(
   const removableTree = new THREE.Group();
   removableTree.name = "Confirmed tree removal · before only";
   beforeGroup.add(removableTree);
-  addTree(removableTree, -20, 330);
+  addTree(removableTree, 282, 292);
   [
-    [-70, 440, 22],
-    [10, 480, 18],
-    [278, 472, 24],
-    [316, 370, 20],
-    [-78, 180, 16],
+    [-68, 440, 22],
+    [8, 480, 18],
+    [276, 472, 24],
+    [382, 388, 20],
+    [400, 178, 16],
   ].forEach(([x, z, radius]) => {
     const shrub = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 1), materials.foliage);
     shrub.position.set(x, radius * 0.7, z);
@@ -423,23 +430,25 @@ function initializeViewer(
     siteVegetation.add(shrub);
   });
 
-  // The artificial turf sits beside the paver work and remains as existing context.
-  planBox(context, -84, -6, 20, 252, 1.2, 0, materials.turf);
-  planBox(context, -88, -84, 16, 256, 1.5, 0, materials.border);
-  planBox(context, -6, -2, 16, 256, 1.5, 0, materials.border);
-  planBox(context, -88, -2, 16, 20, 1.5, 0, materials.border);
-  planBox(context, -88, -2, 252, 256, 1.5, 0, materials.border);
+  // The new patio-angle photos establish the yard orientation. Looking north
+  // from the covered patio, the turf is visually left and the project is right.
+  // In this Three.js view direction, that places the turf beyond the +X edge.
+  planBox(context, 288, 408, 24, 258, 1.2, 0, materials.turf);
+  planBox(context, 284, 288, 20, 262, 1.5, 0, materials.border);
+  planBox(context, 408, 412, 20, 262, 1.5, 0, materials.border);
+  planBox(context, 284, 412, 20, 24, 1.5, 0, materials.border);
+  planBox(context, 284, 412, 258, 262, 1.5, 0, materials.border);
 
   // Before: the actual curved paver patio, concrete pad, portable firepit and prior L-island.
   planBox(beforeGroup, 96, 276, -126, 0, 2, 0, materials.concrete);
   const oldPaverShape = new THREE.Shape();
-  oldPaverShape.moveTo(24, -8);
-  oldPaverShape.lineTo(278, -8);
-  oldPaverShape.quadraticCurveTo(304, 58, 296, 126);
-  oldPaverShape.quadraticCurveTo(326, 218, 278, 288);
-  oldPaverShape.quadraticCurveTo(240, 336, 148, 334);
-  oldPaverShape.quadraticCurveTo(56, 332, 16, 274);
-  oldPaverShape.quadraticCurveTo(-8, 174, 12, 72);
+  oldPaverShape.moveTo(12, -8);
+  oldPaverShape.lineTo(270, -8);
+  oldPaverShape.quadraticCurveTo(294, 58, 284, 126);
+  oldPaverShape.quadraticCurveTo(302, 214, 254, 286);
+  oldPaverShape.quadraticCurveTo(220, 332, 132, 334);
+  oldPaverShape.quadraticCurveTo(48, 330, 12, 272);
+  oldPaverShape.quadraticCurveTo(-16, 174, 4, 64);
   oldPaverShape.closePath();
   extrudeFootprint(beforeGroup, oldPaverShape, 2.1, 0, materials.existingPaver);
 
@@ -710,8 +719,14 @@ function initializeViewer(
   firepitStatus.position.set(138, 48, 384);
   afterDimensions.add(firepitStatus);
   const treeStatus = textSprite("TREE REMOVED · CONFIRMED", 112, "#9fc6af");
-  treeStatus.position.set(-20, 34, 330);
+  treeStatus.position.set(282, 34, 292);
   afterDimensions.add(treeStatus);
+  const turfOrientation = textSprite("TURF · LEFT FROM PATIO", 108, "#9fc6af");
+  turfOrientation.position.set(352, 22, 150);
+  measurementGroup.add(turfOrientation);
+  const projectOrientation = textSprite("RENOVATION · RIGHT FROM PATIO", 126, "#e37b43");
+  projectOrientation.position.set(96, 22, 252);
+  measurementGroup.add(projectOrientation);
   const pergolaStatus = textSprite("PLACEMENT / HEIGHT / ROOF · UNVERIFIED", 154, "#e6a16a");
   pergolaStatus.position.set(96, 132, 96);
   pergolaStatus.visible = false;
@@ -741,6 +756,8 @@ function initializeViewer(
         counterRun: LOCKED.bbq.counterRun,
         stoolSpacing: Number((LOCKED.bbq.barRun / 3).toFixed(3)),
         treeRemovedAfter: true,
+        turfLeftFromPatio: true,
+        renovationRightFromPatio: true,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
     };
@@ -772,20 +789,28 @@ function initializeViewer(
   }
 
   const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
-    hero: { position: new THREE.Vector3(520, 340, 650), target: new THREE.Vector3(112, 24, 120) },
-    plan: { position: new THREE.Vector3(120, 1060, 145.01), target: new THREE.Vector3(120, 0, 145) },
-    bbq: { position: new THREE.Vector3(310, 138, 275), target: new THREE.Vector3(83, 27, 151) },
-    firepit: { position: new THREE.Vector3(320, 170, 575), target: new THREE.Vector3(138, 12, 384) },
-    seating: { position: new THREE.Vector3(300, 105, 150), target: new THREE.Vector3(94, 27, 151) },
+    hero: { position: new THREE.Vector3(188, 78, -96), target: new THREE.Vector3(195, 22, 184) },
+    plan: { position: new THREE.Vector3(150, 1060, 154.01), target: new THREE.Vector3(150, 0, 154) },
+    bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(83, 27, 151) },
+    firepit: { position: new THREE.Vector3(-48, 152, 522), target: new THREE.Vector3(138, 12, 384) },
+    seating: { position: new THREE.Vector3(244, 100, 150), target: new THREE.Vector3(90, 27, 151) },
   };
+  let currentView: ViewName = "hero";
+
+  function updateCameraFov(view: ViewName) {
+    camera.fov = window.innerWidth <= 660 ? (view === "hero" ? 90 : 58) : 37;
+    camera.updateProjectionMatrix();
+  }
 
   function setView(view: ViewName, immediate = false) {
     const preset = presets[view];
     const position = preset.position.clone();
     if (window.innerWidth <= 660) {
-      const scale = view === "plan" ? 1.16 : view === "bbq" || view === "seating" ? 1.22 : 1.3;
+      const scale = view === "plan" ? 1.16 : view === "hero" ? 1 : view === "bbq" || view === "seating" ? 1.22 : 1.18;
       position.sub(preset.target).multiplyScalar(scale).add(preset.target);
     }
+    currentView = view;
+    updateCameraFov(view);
     if (immediate) {
       camera.position.copy(position);
       controls.target.copy(preset.target);
@@ -826,7 +851,7 @@ function initializeViewer(
     const width = mount.clientWidth;
     const height = mount.clientHeight;
     camera.aspect = width / Math.max(1, height);
-    camera.updateProjectionMatrix();
+    updateCameraFov(currentView);
     renderer.setSize(width, height, false);
   }
 
@@ -967,9 +992,9 @@ export default function BackyardViewer() {
       </header>
 
       <section className="intro" aria-labelledby="page-title">
-        <div className="eyebrow">Option study · 1 unit = 1 inch</div>
+        <div className="eyebrow">Patio view · 1 unit = 1 inch</div>
         <h1 id="page-title">A yard you can walk around.</h1>
-        <p>Drag to orbit. Pinch or scroll to zoom. Switch phases and compare the pergola positions against the dimension-locked plan.</p>
+        <p>Start at the covered patio: turf stays left and the renovation fills the right side. Drag to orbit, then compare the pergola positions.</p>
       </section>
 
       {phase === "after" && (
@@ -983,7 +1008,7 @@ export default function BackyardViewer() {
         <div className="spec-head">
           <div>
             <span>Plan intelligence</span>
-            <small>Datum SW main pad · Rev 01</small>
+            <small>Datum SW main pad · Rev 02</small>
           </div>
           <button className="panel-close" onClick={() => setNotesOpen(false)} aria-label="Close plan notes">×</button>
         </div>
@@ -1009,6 +1034,7 @@ export default function BackyardViewer() {
             <div className="status-list">
               <div><i className="dot exact" /><span><b>Locked:</b> pads, borders, firepit footprint, BBQ dimensions, pergola/planter plan size.</span></div>
               <div><i className="dot provisional" /><span><b>Unverified:</b> BBQ/pergola/planter placement; pergola height/roof; firepit construction.</span></div>
+              <div><i className="dot photo" /><span><b>Site orientation:</b> from the covered patio, turf is left and the renovation is right.</span></div>
               <div><i className="dot photo" /><span><b>Photo-calibrated:</b> house massing, curved existing pavers, turf, walls, and gravel context.</span></div>
               <div><i className="dot exact" /><span><b>Confirmed:</b> the mature tree appears in Before and is removed in After.</span></div>
             </div>
@@ -1021,7 +1047,7 @@ export default function BackyardViewer() {
             </div>
             <div className="status-list">
               <div><i className="dot exact" /><span>The existing island uses the geometry from the prior BBQ viewer.</span></div>
-              <div><i className="dot photo" /><span>The curved pavers, portable firepit, turf, gravel, house, walls, and mature tree are reconstructed from the ten supplied images.</span></div>
+              <div><i className="dot photo" /><span>The curved pavers, portable firepit, turf, gravel, house, walls, and mature tree are reconstructed from thirteen supplied images.</span></div>
             </div>
           </>
         )}
@@ -1038,7 +1064,7 @@ export default function BackyardViewer() {
       )}
 
       <button className="reference-btn" onClick={() => setReferencesOpen(true)} aria-label="Open site references">
-        <img src="/reference/photo-9.webp" alt="" />
+        <img src="/reference/photo-11.webp" alt="" />
         <span>Site references</span>
       </button>
       <button className="notes-btn" onClick={() => setNotesOpen(true)}>Plan notes</button>
@@ -1046,7 +1072,7 @@ export default function BackyardViewer() {
 
       <section className={`reference-drawer ${referencesOpen ? "is-open" : ""}`} aria-label="Supplied site reference images" aria-hidden={!referencesOpen}>
         <div className="reference-head">
-          <div><b>Supplied site references</b><span>8 existing views · 2 client markups</span></div>
+          <div><b>Supplied site references</b><span>11 existing views · 2 client markups</span></div>
           <button onClick={() => setReferencesOpen(false)} aria-label="Close site references">×</button>
         </div>
         <div className="reference-grid">

@@ -56,6 +56,9 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /Layout conflict/);
   assert.match(viewer, /TREE REMOVED · CONFIRMED/);
   assert.match(viewer, /treeRemovedAfter: true/);
+  assert.match(viewer, /turfLeftFromPatio: true/);
+  assert.match(viewer, /renovationRightFromPatio: true/);
+  assert.match(viewer, /photo-13\.webp/);
   assert.match(layout, /title: "Backyard Renovation Viewer — Sonoran Horizon"/);
   assert.match(layout, /viewportFit: "cover"/);
 });
