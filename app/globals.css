@@ -227,7 +227,7 @@ button { font: inherit; }
 .dot.photo { background: #aeb8c1; box-shadow: 0 0 0 3px rgba(174, 184, 193, 0.1); }
 .disclaimer { margin: 0; padding: 11px 14px 13px; color: #92938f; font: 7.5px/1.45 var(--mono); }
 
-.view-dock {
+.camera-tour {
   position: absolute;
   z-index: 15;
   left: 50%;
@@ -235,7 +235,8 @@ button { font: inherit; }
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  width: 278px;
   max-width: calc(100vw - 24px);
   padding: 5px;
   border: 1px solid var(--line);
@@ -245,23 +246,23 @@ button { font: inherit; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
-.view-dock button {
-  min-width: 62px;
-  min-height: 42px;
-  padding: 0 12px;
+.camera-tour button {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
   border: 0;
-  border-radius: 999px;
-  color: var(--muted);
-  background: transparent;
+  border-radius: 50%;
+  color: #101214;
+  background: var(--accent);
   cursor: pointer;
-  font-size: 9px;
-  font-weight: 750;
-  letter-spacing: 0.045em;
+  font-size: 20px;
+  line-height: 1;
   transition: 0.2s ease;
 }
-.view-dock button:hover:not(:disabled) { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
-.view-dock button.is-active { color: #101214; background: var(--accent); }
-.view-dock button:disabled { opacity: 0.25; cursor: not-allowed; }
+.camera-tour button:hover { transform: scale(1.04); }
+.camera-tour > div { min-width: 136px; text-align: center; }
+.camera-tour small { display: block; color: var(--muted); font: 7px/1 var(--mono); letter-spacing: 0.1em; }
+.camera-tour strong { display: block; margin-top: 5px; font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
 .boundary-note {
   position: absolute;
   z-index: 8;
@@ -409,8 +410,9 @@ button { font: inherit; }
     text-transform: uppercase;
     backdrop-filter: blur(14px);
   }
-  .view-dock { width: calc(100vw - 24px); bottom: max(10px, env(safe-area-inset-bottom)); justify-content: stretch; overflow: hidden; }
-  .view-dock button { min-width: 0; flex: 1 1 0; min-height: 42px; padding: 0 4px; font-size: 8px; }
+  .camera-tour { width: calc(100vw - 24px); bottom: max(10px, env(safe-area-inset-bottom)); }
+  .camera-tour button { width: 48px; height: 48px; }
+  .camera-tour > div { flex: 1 1 auto; }
   .mobile-pergola {
     position: absolute;
     z-index: 17;
@@ -437,5 +439,5 @@ button { font: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loader, .spec-panel, .view-dock button { transition: none; }
+  .loader, .spec-panel, .camera-tour button { transition: none; }
 }

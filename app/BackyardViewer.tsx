@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-type ViewName = "hero" | "plan" | "bbq" | "firepit" | "seating";
+type SceneName = "patioLeft" | "patioRight" | "mainForward";
 type PergolaOption = "north" | "original";
 
 const LOCKED = {
@@ -61,12 +61,10 @@ const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: stri
   original: { x: 84, z: 24, label: "Original", note: "Reference position · post intersects counter" },
 };
 
-const VIEWS: { id: ViewName; label: string }[] = [
-  { id: "hero", label: "Patio" },
-  { id: "plan", label: "Plan" },
-  { id: "bbq", label: "BBQ" },
-  { id: "firepit", label: "Fire" },
-  { id: "seating", label: "Seating" },
+const SCENES: { id: SceneName; label: string }[] = [
+  { id: "patioLeft", label: "Patio · left" },
+  { id: "patioRight", label: "Patio · right" },
+  { id: "mainForward", label: "Main area" },
 ];
 
 const REFERENCE_IMAGES = [
@@ -85,7 +83,7 @@ declare global {
   interface Window {
     __BRU_DEBUG__?: {
       locked: typeof LOCKED;
-      state: { measurements: boolean; pergola: PergolaOption; mobilePresetOnly: boolean };
+      state: { measurements: boolean; pergola: PergolaOption; mobilePresetOnly: boolean; scene: SceneName };
       checks: Record<string, number | boolean>;
     };
   }
@@ -94,7 +92,7 @@ declare global {
 interface ViewerApi {
   setMeasurements: (visible: boolean) => void;
   setPergola: (option: PergolaOption) => void;
-  setView: (view: ViewName, immediate?: boolean) => void;
+  setScene: (scene: SceneName, immediate?: boolean) => void;
   dispose: () => void;
 }
 
@@ -764,7 +762,7 @@ function initializeViewer(
   function updateDebug() {
     window.__BRU_DEBUG__ = {
       locked: LOCKED,
-      state: { measurements: measurementVisible, pergola: pergolaOption, mobilePresetOnly },
+      state: { measurements: measurementVisible, pergola: pergolaOption, mobilePresetOnly, scene: currentScene },
       checks: {
         mainWidth: LOCKED.main.x1 - LOCKED.main.x0,
         mainDepth: LOCKED.main.z1 - LOCKED.main.z0,
@@ -789,6 +787,8 @@ function initializeViewer(
         afterPaletteMonochrome: true,
         beforeModeRemoved: true,
         mobilePresetCameraOnly: true,
+        arrowCameraTour: true,
+        birdseyeRemoved: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -818,31 +818,28 @@ function initializeViewer(
     updateDebug();
   }
 
-  const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
-    hero: { position: new THREE.Vector3(36, 72, -106), target: new THREE.Vector3(176, 30, 168) },
-    plan: { position: new THREE.Vector3(150, 1320, 180), target: new THREE.Vector3(150, 0, 180) },
-    bbq: { position: new THREE.Vector3(342, 112, 46), target: new THREE.Vector3(193, 28, 151) },
-    firepit: { position: new THREE.Vector3(300, 118, 455), target: new THREE.Vector3(138, 12, 348) },
-    seating: { position: new THREE.Vector3(334, 76, 230), target: new THREE.Vector3(190, 28, 165) },
+  const presets: Record<SceneName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
+    patioLeft: { position: new THREE.Vector3(36, 72, -106), target: new THREE.Vector3(235, 28, 168) },
+    patioRight: { position: new THREE.Vector3(150, 72, -106), target: new THREE.Vector3(76, 28, 168) },
+    mainForward: { position: new THREE.Vector3(138, 64, 212), target: new THREE.Vector3(138, 18, 360) },
   };
-  let currentView: ViewName = "hero";
+  let currentScene: SceneName = "patioLeft";
 
-  function updateCameraFov(view: ViewName) {
-    camera.fov = window.innerWidth <= 660 ? (view === "hero" ? 90 : 58) : 37;
+  function updateCameraFov(sceneName: SceneName) {
+    camera.fov = window.innerWidth <= 660 ? (sceneName === "mainForward" ? 70 : 88) : 37;
     camera.updateProjectionMatrix();
   }
 
-  function setView(view: ViewName, immediate = false) {
-    const preset = presets[view];
+  function setScene(sceneName: SceneName, immediate = false) {
+    const preset = presets[sceneName];
     const position = preset.position.clone();
     if (window.innerWidth <= 660) {
-      const scale = view === "plan" ? 1.16 : view === "hero" ? 1 : view === "bbq" || view === "seating" ? 1.22 : 1.18;
+      const scale = sceneName === "mainForward" ? 1.08 : 1;
       position.sub(preset.target).multiplyScalar(scale).add(preset.target);
     }
-    currentView = view;
-    pergolaRoofGroup.visible = view !== "plan";
-    camera.up.set(0, view === "plan" ? 0 : 1, view === "plan" ? 1 : 0);
-    updateCameraFov(view);
+    currentScene = sceneName;
+    camera.up.set(0, 1, 0);
+    updateCameraFov(sceneName);
     if (immediate) {
       camera.position.copy(position);
       controls.target.copy(preset.target);
@@ -877,7 +874,7 @@ function initializeViewer(
     controls.enablePan = !mobilePresetOnly;
     controls.enableZoom = !mobilePresetOnly;
     camera.aspect = width / Math.max(1, height);
-    updateCameraFov(currentView);
+    updateCameraFov(currentScene);
     renderer.setSize(width, height, false);
     updateDebug();
   }
@@ -888,7 +885,7 @@ function initializeViewer(
   });
   resize();
   updateConflict("north");
-  setView("hero", true);
+  setScene("patioLeft", true);
   updateDebug();
 
   let frame = 0;
@@ -910,7 +907,7 @@ function initializeViewer(
   return {
     setMeasurements,
     setPergola,
-    setView,
+    setScene,
     dispose() {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
@@ -934,7 +931,7 @@ function initializeViewer(
 export default function BackyardViewer() {
   const mountRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ViewerApi | null>(null);
-  const [activeView, setActiveView] = useState<ViewName>("hero");
+  const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   const [measurements, setMeasurementsState] = useState(false);
   const [pergola, setPergolaState] = useState<PergolaOption>("north");
   const [conflict, setConflict] = useState({ label: "Post clear", active: false });
@@ -970,9 +967,10 @@ export default function BackyardViewer() {
     };
   }, []);
 
-  function chooseView(next: ViewName) {
-    setActiveView(next);
-    apiRef.current?.setView(next);
+  function moveScene(direction: -1 | 1) {
+    const next = (activeSceneIndex + direction + SCENES.length) % SCENES.length;
+    setActiveSceneIndex(next);
+    apiRef.current?.setScene(SCENES[next].id);
   }
 
   function toggleMeasurements() {
@@ -1018,7 +1016,7 @@ export default function BackyardViewer() {
       <aside className={`spec-panel ${notesOpen ? "is-open" : ""}`} aria-label="Plan facts and provisional items">
         <div className="spec-head">
           <div>
-            <span>Plan</span>
+            <span>Project</span>
             <small>1 unit = 1 inch</small>
           </div>
           <button className="panel-close" onClick={() => setNotesOpen(false)} aria-label="Close plan notes">×</button>
@@ -1076,16 +1074,13 @@ export default function BackyardViewer() {
         </div>
       </section>
 
-      <nav className="view-dock" aria-label="Camera presets">
-        {VIEWS.map((view) => (
-          <button
-            key={view.id}
-            className={activeView === view.id ? "is-active" : ""}
-            onClick={() => chooseView(view.id)}
-          >
-            {view.label}
-          </button>
-        ))}
+      <nav className="camera-tour" aria-label="Camera scenes">
+        <button onClick={() => moveScene(-1)} aria-label="Previous camera scene">←</button>
+        <div aria-live="polite">
+          <small>{activeSceneIndex + 1} / {SCENES.length}</small>
+          <strong>{SCENES[activeSceneIndex].label}</strong>
+        </div>
+        <button onClick={() => moveScene(1)} aria-label="Next camera scene">→</button>
       </nav>
 
       <div className={`loader ${ready ? "is-done" : ""}`} aria-live="polite">
