@@ -439,9 +439,16 @@ function initializeViewer(
   box(house, 180, 7, 126, 90, 92, -63, materials.roof);
   box(house, 180, 8, 5, 90, 86, -2.5, materials.roof);
   [[6, -6], [174, -6]].forEach(([x, z]) => box(house, 6, 88, 6, x, 44, z, materials.stucco));
-  box(house, 62, 48, 1.2, 132, 51, -125.3, materials.glass);
-  box(house, 42, 48, 1.2, 190, 51, -125.3, materials.glass);
-  [104, 132, 190, 214].forEach((x) => box(house, 2, 55, 2, x, 52, -124, materials.counter));
+  // Rear house façade beneath the covered patio. Door and window placement is
+  // photo-derived context; the overlay footprint remains controlled by LOCKED.
+  planBox(house, 0, 180, -132, -126, 92, 0, materials.stucco);
+  box(house, 72, 56, 1.4, 52, 50, -125.1, materials.glass);
+  box(house, 56, 48, 1.4, 132, 52, -125.1, materials.glass);
+  [14, 52, 90, 102, 162].forEach((x) => box(house, 2.6, 60, 2, x, 50, -123.9, materials.counter));
+  [[52, 20, 76], [52, 80, 76], [132, 26, 60], [132, 78, 60]].forEach(([x, y, width]) => {
+    box(house, width, 2.6, 2, x, y, -123.9, materials.counter);
+  });
+  box(house, 1.8, 11, 2.4, 57, 49, -122.7, materials.metal);
 
   const siteVegetation = new THREE.Group();
   context.add(siteVegetation);
@@ -886,6 +893,7 @@ function initializeViewer(
         patioRoofMatchesOverlay: true,
         houseBulkWestOfPatio: true,
         houseReturnWallVisible: true,
+        patioBackWallVisible: true,
         pergolaMovedNorth: true,
         pergolaLeftRightUnchanged: true,
         closedPergola: true,
@@ -1053,7 +1061,6 @@ export default function BackyardViewer() {
   const [activeSceneIndex, setActiveSceneIndex] = useState(0);
   const [measurements, setMeasurementsState] = useState(false);
   const [pergola, setPergolaState] = useState<PergolaOption>("north");
-  const [conflict, setConflict] = useState({ label: "Post clear", active: false });
   const [notesOpen, setNotesOpen] = useState(false);
   const [referencesOpen, setReferencesOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -1068,9 +1075,7 @@ export default function BackyardViewer() {
         () => {
           if (active) setReady(true);
         },
-        (label, hasConflict) => {
-          if (active) setConflict({ label, active: hasConflict });
-        },
+        () => undefined,
       );
     } catch (reason) {
       console.error(reason);
@@ -1121,16 +1126,6 @@ export default function BackyardViewer() {
           <span className="tool-label">Measurements</span>
         </button>
       </header>
-
-      <section className="intro" aria-labelledby="page-title">
-        <div className="eyebrow">Irvin backyard · interactive 3D</div>
-        <h1 id="page-title">Black. White. Built to gather.</h1>
-      </section>
-
-      <div className={`conflict-badge ${conflict.active ? "is-conflict" : "is-clear"}`} role="status">
-        <span>{conflict.active ? "Original conflict" : "Pergola north"}</span>
-        <strong>{conflict.label}</strong>
-      </div>
 
       <aside className={`spec-panel ${notesOpen ? "is-open" : ""}`} aria-label="Plan facts and provisional items">
         <div className="spec-head">

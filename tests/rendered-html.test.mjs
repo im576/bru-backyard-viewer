@@ -35,7 +35,8 @@ test("server-renders the backyard viewer shell", async () => {
   assert.doesNotMatch(html, /Project phase/);
   assert.match(html, /Measurements/);
   assert.match(html, /Photos/);
-  assert.match(html, /Pergola north/);
+  assert.doesNotMatch(html, /Black\. White\. Built to gather\./);
+  assert.doesNotMatch(html, /Irvin backyard · interactive 3D/);
   assert.match(html, /Previous camera scene/);
   assert.match(html, /Next camera scene/);
   assert.match(html, /Patio · left/);
@@ -57,7 +58,7 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /counterRun: 274/);
   assert.match(viewer, /footprintSqFt: 76\.1/);
   assert.match(viewer, /width: 192, depth: 192/);
-  assert.match(viewer, /Original conflict/);
+  assert.match(viewer, /POST ON COUNTER/);
   assert.match(viewer, /TREE REMOVED · CONFIRMED/);
   assert.match(viewer, /treeRemovedAfter: true/);
   assert.match(viewer, /turfOmitted: true/);
@@ -72,6 +73,7 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /patioRoofMatchesOverlay: true/);
   assert.match(viewer, /houseBulkWestOfPatio: true/);
   assert.match(viewer, /houseReturnWallVisible: true/);
+  assert.match(viewer, /patioBackWallVisible: true/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
   assert.match(viewer, /north: \{ x: 84, z: 37/);
