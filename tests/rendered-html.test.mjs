@@ -71,6 +71,7 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /patioNorthEdgeTouchesMain:/);
   assert.match(viewer, /patioRoofMatchesOverlay: true/);
   assert.match(viewer, /houseBulkWestOfPatio: true/);
+  assert.match(viewer, /houseReturnWallVisible: true/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
   assert.match(viewer, /north: \{ x: 84, z: 37/);

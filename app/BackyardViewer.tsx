@@ -423,6 +423,16 @@ function initializeViewer(
   // incorrect and made the renovation look centered in the house footprint.
   planBox(house, 120, 384, -252, -126, 92, 0, materials.stucco);
   box(house, 272, 9, 134, 252, 96.5, -189, materials.roof);
+  // The covered patio is attached to the house, not freestanding. The plan's
+  // 15-foot overlay maps to world X 0→180; the house begins immediately at its
+  // remaining edge (X = 180) and continues west in plan / screen-left in the
+  // approved presentation. This return is the stucco wall visible in the patio
+  // photos and prevents the patio camera from seeing through to the perimeter.
+  planBox(house, 180, 384, -126, 0, 92, 0, materials.stucco);
+  box(house, 212, 9, 134, 282, 96.5, -63, materials.roof);
+  box(house, 1.3, 46, 50, 179.3, 53, -70, materials.glass);
+  [-97, -43].forEach((z) => box(house, 2.4, 54, 3.2, 178.3, 53, z, materials.counter));
+  [26, 80].forEach((y) => box(house, 2.4, 3.2, 54, 178.3, y, -70, materials.counter));
   // The covered patio and the overlay are the same right-side rectangle:
   // the proposal mirror maps plan X 96→276 to world X 0→180. Its screen-right
   // edge and the square main pad's screen-right edge therefore share X = 0.
@@ -875,6 +885,7 @@ function initializeViewer(
         patioNorthEdgeTouchesMain: LOCKED.patio.z1 === LOCKED.main.z0,
         patioRoofMatchesOverlay: true,
         houseBulkWestOfPatio: true,
+        houseReturnWallVisible: true,
         pergolaMovedNorth: true,
         pergolaLeftRightUnchanged: true,
         closedPergola: true,
