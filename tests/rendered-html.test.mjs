@@ -34,6 +34,7 @@ test("server-renders the backyard viewer shell", async () => {
   assert.doesNotMatch(html, />Before</);
   assert.doesNotMatch(html, /Project phase/);
   assert.match(html, /Measurements/);
+  assert.match(html, /26′ × 23′/);
   assert.match(html, /Photos/);
   assert.doesNotMatch(html, /Black\. White\. Built to gather\./);
   assert.doesNotMatch(html, /Irvin backyard · interactive 3D/);

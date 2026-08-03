@@ -819,7 +819,7 @@ function initializeViewer(
   }
 
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 8, -18), new THREE.Vector3(276, 8, -18), "MAIN PAD 23′–0″");
-  addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 276), "23′–0″ SQUARE");
+  addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 276), "26′–0″");
   addDimension(afterPaverDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "PATIO 15′–0″");
   addDimension(afterPaverDimensions, new THREE.Vector3(82, 8, -126), new THREE.Vector3(82, 8, 0), "10′–6″");
   addDimension(afterPaverDimensions, new THREE.Vector3(224, 8, 276), new THREE.Vector3(224, 8, 420), "UPPER PAD 12′–0″");
@@ -1136,7 +1136,7 @@ export default function BackyardViewer() {
           <button className="panel-close" onClick={() => setNotesOpen(false)} aria-label="Close plan notes">×</button>
         </div>
         <div className="metric-grid">
-          <div><small>Main pad</small><strong>23′ × 23′</strong></div>
+          <div><small>Main pad</small><strong>26′ × 23′</strong></div>
           <div><small>Upper pad</small><strong>12′ × 12′</strong></div>
           <div><small>BBQ footprint</small><strong>76.1 sf</strong></div>
           <div><small>Counter run</small><strong>22′–10″</strong></div>
@@ -1153,7 +1153,7 @@ export default function BackyardViewer() {
           <p>{PERGOLA_OPTIONS[pergola].note}</p>
         </div>
         <div className="status-list">
-          <div><i className="dot exact" /><span>23′ square · gray pavers · black border</span></div>
+          <div><i className="dot exact" /><span>26′ × 23′ · gray pavers · black border</span></div>
           <div><i className="dot exact" /><span>White closed pergola · fan · media wall</span></div>
           <div><i className="dot provisional" /><span>Left landscape is conceptual · no turf</span></div>
         </div>
