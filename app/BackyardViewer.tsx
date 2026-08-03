@@ -57,7 +57,7 @@ const PROVISIONAL = {
 const PLAN_PRESENTATION_MIRROR_X = LOCKED.main.x1;
 
 const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: string; note: string }> = {
-  north: { x: 84, z: 37, label: "Moved north", note: "Same alignment · shifted 13″ north" },
+  north: { x: 84, z: 37, label: "Optimal", note: "Selected position · shifted 13″ north · posts clear" },
   original: { x: 84, z: 24, label: "Original", note: "Reference position · post intersects counter" },
 };
 
