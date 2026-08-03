@@ -59,6 +59,9 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /turfOmitted: true/);
   assert.match(viewer, /afterLayoutMirrored: true/);
   assert.match(viewer, /afterGroup\.scale\.x = -1/);
+  assert.match(viewer, /afterFixed\.scale\.x = -1/);
+  assert.match(viewer, /patioEastAligned:/);
+  assert.match(viewer, /patioNorthEdgeTouchesMain:/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
   assert.match(viewer, /\+13″ north/);

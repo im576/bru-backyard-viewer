@@ -389,14 +389,23 @@ function initializeViewer(
   const measurementGroup = new THREE.Group();
   const beforeDimensions = new THREE.Group();
   const afterDimensions = new THREE.Group();
+  const afterPaverDimensions = new THREE.Group();
   scene.add(context, beforeGroup, afterGroup, measurementGroup);
   afterGroup.add(afterFixed, provisionalGroup, pergolaGroup, conflictGroup);
   measurementGroup.add(beforeDimensions, afterDimensions);
+  afterDimensions.add(afterPaverDimensions);
   afterGroup.name = "After layout · mirrored to match supplied north-up sketch";
   afterGroup.position.x = PLAN_MIRROR_X;
   afterGroup.scale.x = -1;
+  // Pavers retain their written Rev 03 coordinates: the overlay's full north
+  // edge meets the main pad and both share the east/right edge. This nested
+  // inverse cancels the feature-layout mirror for pavers only.
+  afterFixed.position.x = PLAN_MIRROR_X;
+  afterFixed.scale.x = -1;
   afterDimensions.position.x = PLAN_MIRROR_X;
   afterDimensions.scale.x = -1;
+  afterPaverDimensions.position.x = PLAN_MIRROR_X;
+  afterPaverDimensions.scale.x = -1;
   measurementGroup.visible = false;
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(860, 1020), materials.ground);
@@ -722,11 +731,12 @@ function initializeViewer(
   beforeTreeStatus.position.set(282, 178, 292);
   beforeDimensions.add(beforeTreeStatus);
 
-  addDimension(afterDimensions, new THREE.Vector3(0, 8, -18), new THREE.Vector3(276, 8, -18), "MAIN PAD 23′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 312), "26′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "PATIO 15′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(224, 8, 312), new THREE.Vector3(224, 8, 456), "UPPER PAD 12′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(102, 28, 336), new THREE.Vector3(174, 28, 336), "FIREPIT 6′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(0, 8, -18), new THREE.Vector3(276, 8, -18), "MAIN PAD 23′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 312), "26′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "PATIO 15′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(82, 8, -126), new THREE.Vector3(82, 8, 0), "10′–6″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(224, 8, 312), new THREE.Vector3(224, 8, 456), "UPPER PAD 12′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(102, 28, 336), new THREE.Vector3(174, 28, 336), "FIREPIT 6′–0″");
   addDimension(afterDimensions, new THREE.Vector3(16, 52, 84), new THREE.Vector3(16, 52, 218), "BBQ SPINE 11′–2″");
   addDimension(afterDimensions, new THREE.Vector3(28, 52, 72), new THREE.Vector3(138, 52, 72), "ARMS 9′–2″");
   addDimension(afterDimensions, new THREE.Vector3(68, 8, 151), new THREE.Vector3(138, 8, 151), "COOK 5′–10″");
@@ -734,7 +744,7 @@ function initializeViewer(
   addDimension(afterDimensions, new THREE.Vector3(84, 122, 10), new THREE.Vector3(276, 122, 10), "PERGOLA 16′–0″");
   addDimension(afterDimensions, new THREE.Vector3(374, 52, 330), new THREE.Vector3(374, 52, 582), "PLANTER LEG 21′–0″");
   addDimension(afterDimensions, new THREE.Vector3(180, 8, 456), new THREE.Vector3(180, 8, 534), "≈ 6′–6″ GAP");
-  addDimension(afterDimensions, new THREE.Vector3(0, 7, 18), new THREE.Vector3(6, 7, 18), "6″ BORDER", new THREE.Vector3(0, 0, 10));
+  addDimension(afterPaverDimensions, new THREE.Vector3(0, 7, 18), new THREE.Vector3(6, 7, 18), "6″ BORDER", new THREE.Vector3(0, 0, 10));
 
   const houseLabel = textSprite("HOUSE / SOUTH (−Z)", 92, "#8c918e");
   houseLabel.position.set(186, 112, -145);
@@ -791,6 +801,8 @@ function initializeViewer(
         turfOmitted: true,
         renovationRightFromPatio: true,
         afterLayoutMirrored: true,
+        patioEastAligned: LOCKED.patio.x1 === LOCKED.main.x1,
+        patioNorthEdgeTouchesMain: LOCKED.patio.z1 === LOCKED.main.z0,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
