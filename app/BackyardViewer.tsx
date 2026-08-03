@@ -11,10 +11,12 @@ type ViewName = "hero" | "plan" | "bbq" | "firepit" | "seating";
 type PergolaOption = "nominal" | "north13";
 
 const LOCKED = {
-  main: { x0: 0, x1: 276, z0: 0, z1: 312 },
+  // Client correction: preserve the recorded 23-foot width and use it for
+  // both axes so the main pad is a true square.
+  main: { x0: 0, x1: 276, z0: 0, z1: 276 },
   patio: { x0: 96, x1: 276, z0: -126, z1: 0 },
-  upper: { x0: 66, x1: 210, z0: 312, z1: 456 },
-  firepit: { x0: 102, x1: 174, z0: 348, z1: 420 },
+  upper: { x0: 66, x1: 210, z0: 276, z1: 420 },
+  firepit: { x0: 102, x1: 174, z0: 312, z1: 384 },
   border: 6,
   bbq: {
     x0: 28,
@@ -42,18 +44,18 @@ const PROVISIONAL = {
   planter: {
     x0: 108,
     x1: 360,
-    z0: 330,
-    z1: 582,
+    z0: 294,
+    z1: 546,
     eastLegX0: 312,
-    northLegZ0: 534,
+    northLegZ0: 498,
     clearanceFromUpper: 78,
   },
 } as const;
 
-// Rev 03 dimensions remain in their written plan coordinates. The supplied
-// north-up correction establishes that those plan X coordinates must be
-// mirrored into Three.js world X so east/right reads correctly from the patio.
-const PLAN_MIRROR_X = LOCKED.main.x1;
+// Three.js' north-up overhead camera presents +X on screen-left. Keep every
+// locked coordinate in its written plan system, then use one presentation
+// mirror so east/right reads correctly to the client.
+const PLAN_PRESENTATION_MIRROR_X = LOCKED.main.x1;
 
 const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: string; note: string }> = {
   nominal: { x: 84, z: 24, label: "Rev 03", note: "Roof shelters cook zone · southeast post lands on counter" },
@@ -106,7 +108,8 @@ function near(actual: number, expected: number, tolerance = 0.001) {
 
 function verifyLockedDimensions() {
   near(LOCKED.main.x1 - LOCKED.main.x0, 276);
-  near(LOCKED.main.z1 - LOCKED.main.z0, 312);
+  near(LOCKED.main.z1 - LOCKED.main.z0, 276);
+  near(LOCKED.main.x1 - LOCKED.main.x0, LOCKED.main.z1 - LOCKED.main.z0);
   near(LOCKED.patio.x1 - LOCKED.patio.x0, 180);
   near(LOCKED.patio.z1 - LOCKED.patio.z0, 126);
   near(LOCKED.upper.x1 - LOCKED.upper.x0, 144);
@@ -394,18 +397,15 @@ function initializeViewer(
   afterGroup.add(afterFixed, provisionalGroup, pergolaGroup, conflictGroup);
   measurementGroup.add(beforeDimensions, afterDimensions);
   afterDimensions.add(afterPaverDimensions);
-  afterGroup.name = "After layout · mirrored to match supplied north-up sketch";
-  afterGroup.position.x = PLAN_MIRROR_X;
+  afterGroup.name = "After layout · locked coordinates presented east/right";
+  afterGroup.position.x = PLAN_PRESENTATION_MIRROR_X;
   afterGroup.scale.x = -1;
-  // Pavers retain their written Rev 03 coordinates: the overlay's full north
-  // edge meets the main pad and both share the east/right edge. This nested
-  // inverse cancels the feature-layout mirror for pavers only.
-  afterFixed.position.x = PLAN_MIRROR_X;
-  afterFixed.scale.x = -1;
-  afterDimensions.position.x = PLAN_MIRROR_X;
+  beforeGroup.position.x = PLAN_PRESENTATION_MIRROR_X;
+  beforeGroup.scale.x = -1;
+  afterDimensions.position.x = PLAN_PRESENTATION_MIRROR_X;
   afterDimensions.scale.x = -1;
-  afterPaverDimensions.position.x = PLAN_MIRROR_X;
-  afterPaverDimensions.scale.x = -1;
+  beforeDimensions.position.x = PLAN_PRESENTATION_MIRROR_X;
+  beforeDimensions.scale.x = -1;
   measurementGroup.visible = false;
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(860, 1020), materials.ground);
@@ -434,17 +434,19 @@ function initializeViewer(
   const house = new THREE.Group();
   house.name = "House context · photo-derived massing";
   context.add(house);
-  planBox(house, 68, 306, -224, -126, 92, 0, materials.stucco);
-  planBox(house, 276, 360, -126, 78, 92, 0, materials.stucco);
-  box(house, 246, 9, 116, 187, 96.5, -174, materials.roof);
-  box(house, 92, 9, 212, 318, 96.5, -24, materials.roof);
-  // Rear patio roof and columns visible in the supplied images.
-  box(house, 190, 7, 68, 186, 92, -92, materials.roof);
-  [[102, -62], [270, -62]].forEach(([x, z]) => box(house, 6, 88, 6, x, 44, z, materials.stucco));
-  box(house, 68, 48, 1.2, 142, 51, -125.3, materials.glass);
-  box(house, 44, 48, 1.2, 224, 51, -125.3, materials.glass);
-  box(house, 1.2, 44, 48, 276.7, 52, -48, materials.glass);
-  [130, 158, 218, 242].forEach((x) => box(house, 2, 55, 2, x, 52, -124, materials.counter));
+  // The house bulk belongs left/west of the work. The old east-wing mass was
+  // incorrect and made the renovation look centered in the house footprint.
+  planBox(house, 120, 384, -252, -126, 92, 0, materials.stucco);
+  box(house, 272, 9, 134, 252, 96.5, -189, materials.roof);
+  // The covered patio and the overlay are the same right-side rectangle:
+  // the proposal mirror maps plan X 96→276 to world X 0→180. Its screen-right
+  // edge and the square main pad's screen-right edge therefore share X = 0.
+  box(house, 180, 7, 126, 90, 92, -63, materials.roof);
+  box(house, 180, 8, 5, 90, 86, -2.5, materials.roof);
+  [[6, -6], [174, -6]].forEach(([x, z]) => box(house, 6, 88, 6, x, 44, z, materials.stucco));
+  box(house, 62, 48, 1.2, 132, 51, -125.3, materials.glass);
+  box(house, 42, 48, 1.2, 190, 51, -125.3, materials.glass);
+  [104, 132, 190, 214].forEach((x) => box(house, 2, 55, 2, x, 52, -124, materials.counter));
 
   const siteVegetation = new THREE.Group();
   context.add(siteVegetation);
@@ -454,7 +456,9 @@ function initializeViewer(
   const removableTree = new THREE.Group();
   removableTree.name = "Confirmed tree removal · before only";
   beforeGroup.add(removableTree);
-  addTree(removableTree, 282, 292);
+  // Pre-compensate the confirmed tree location so the hardscape presentation
+  // mirror does not move an existing photo landmark.
+  addTree(removableTree, -6, 292);
   [
     [-68, 440, 22],
     [8, 480, 18],
@@ -502,22 +506,22 @@ function initializeViewer(
   planBox(existingIsland, bx - 2, bx + 42, bz - 2, bz + 122, 2.35, 39, materials.counter);
 
   function addPaverZones() {
-    planBox(afterFixed, 0, 276, 0, 312, 2, 0, materials.paver);
+    planBox(afterFixed, 0, 276, 0, 276, 2, 0, materials.paver);
     planBox(afterFixed, 96, 276, -126, 0, 2.35, 0, materials.paver);
-    planBox(afterFixed, 66, 210, 312, 456, 2, 0, materials.paver);
+    planBox(afterFixed, 66, 210, 276, 420, 2, 0, materials.paver);
 
     // Exact 6-inch perimeter border, omitted where zones share an edge.
-    planBox(afterFixed, 0, 6, 0, 312, 0.65, 2, materials.border);
-    planBox(afterFixed, 270, 276, 0, 312, 0.65, 2, materials.border);
+    planBox(afterFixed, 0, 6, 0, 276, 0.65, 2, materials.border);
+    planBox(afterFixed, 270, 276, 0, 276, 0.65, 2, materials.border);
     planBox(afterFixed, 0, 96, 0, 6, 0.65, 2, materials.border);
-    planBox(afterFixed, 0, 66, 306, 312, 0.65, 2, materials.border);
-    planBox(afterFixed, 210, 276, 306, 312, 0.65, 2, materials.border);
+    planBox(afterFixed, 0, 66, 270, 276, 0.65, 2, materials.border);
+    planBox(afterFixed, 210, 276, 270, 276, 0.65, 2, materials.border);
     planBox(afterFixed, 96, 102, -126, 0, 0.65, 2.35, materials.border);
     planBox(afterFixed, 270, 276, -126, 0, 0.65, 2.35, materials.border);
     planBox(afterFixed, 96, 276, -126, -120, 0.65, 2.35, materials.border);
-    planBox(afterFixed, 66, 72, 312, 456, 0.65, 2, materials.border);
-    planBox(afterFixed, 204, 210, 312, 456, 0.65, 2, materials.border);
-    planBox(afterFixed, 66, 210, 450, 456, 0.65, 2, materials.border);
+    planBox(afterFixed, 66, 72, 276, 420, 0.65, 2, materials.border);
+    planBox(afterFixed, 204, 210, 276, 420, 0.65, 2, materials.border);
+    planBox(afterFixed, 66, 210, 414, 420, 0.65, 2, materials.border);
   }
 
   function addBbq() {
@@ -618,7 +622,7 @@ function initializeViewer(
     planBox(g, x0, x1, z1 - 12, z1, inferredHeight, 2.65, materials.provisional);
     planBox(g, x0, x0 + 12, z0 + 12, z1 - 12, inferredHeight, 2.65, materials.provisional);
     planBox(g, x1 - 12, x1, z0 + 12, z1 - 12, inferredHeight, 2.65, materials.provisional);
-    outlineBox(g, 72, inferredHeight, 72, 138, inferredHeight / 2 + 2.65, 384);
+    outlineBox(g, 72, inferredHeight, 72, 138, inferredHeight / 2 + 2.65, 348);
   }
 
   function addPlanter() {
@@ -715,7 +719,8 @@ function initializeViewer(
     const tick = Math.abs(direction.x) > Math.abs(direction.z) ? new THREE.Vector3(0, 0, 6) : new THREE.Vector3(6, 0, 0);
     lineBetween(group, a.clone().sub(tick), a.clone().add(tick), material);
     lineBetween(group, b.clone().sub(tick), b.clone().add(tick), material);
-    const label = textSprite(text, Math.max(50, text.length * 4.8), undefined, group === afterDimensions);
+    const mirrored = group === beforeDimensions || group === afterDimensions || group === afterPaverDimensions;
+    const label = textSprite(text, Math.max(50, text.length * 4.8), undefined, mirrored);
     label.position.copy(a).add(b).multiplyScalar(0.5).add(labelOffset);
     label.position.y += 8;
     group.add(label);
@@ -724,47 +729,45 @@ function initializeViewer(
   addDimension(beforeDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "EXISTING PAD 15′–0″");
   addDimension(beforeDimensions, new THREE.Vector3(82, 8, -126), new THREE.Vector3(82, 8, 0), "10′–6″");
   addDimension(beforeDimensions, new THREE.Vector3(28, 48, 218), new THREE.Vector3(28, 48, 84), "EXISTING L-ISLAND");
-  const beforeFirepitStatus = textSprite("PORTABLE FIREPIT / CIRCULAR PAD", 132, "#9eb7c5");
+  const beforeFirepitStatus = textSprite("PORTABLE FIREPIT / CIRCULAR PAD", 132, "#9eb7c5", true);
   beforeFirepitStatus.position.set(224, 34, 268);
   beforeDimensions.add(beforeFirepitStatus);
-  const beforeTreeStatus = textSprite("TREE · REMOVING", 84, "#e6a16a");
-  beforeTreeStatus.position.set(282, 178, 292);
+  const beforeTreeStatus = textSprite("TREE · REMOVING", 84, "#e6a16a", true);
+  beforeTreeStatus.position.set(-6, 178, 292);
   beforeDimensions.add(beforeTreeStatus);
 
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 8, -18), new THREE.Vector3(276, 8, -18), "MAIN PAD 23′–0″");
-  addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 312), "26′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 276), "23′–0″ SQUARE");
   addDimension(afterPaverDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "PATIO 15′–0″");
   addDimension(afterPaverDimensions, new THREE.Vector3(82, 8, -126), new THREE.Vector3(82, 8, 0), "10′–6″");
-  addDimension(afterPaverDimensions, new THREE.Vector3(224, 8, 312), new THREE.Vector3(224, 8, 456), "UPPER PAD 12′–0″");
-  addDimension(afterPaverDimensions, new THREE.Vector3(102, 28, 336), new THREE.Vector3(174, 28, 336), "FIREPIT 6′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(224, 8, 276), new THREE.Vector3(224, 8, 420), "UPPER PAD 12′–0″");
+  addDimension(afterPaverDimensions, new THREE.Vector3(102, 28, 300), new THREE.Vector3(174, 28, 300), "FIREPIT 6′–0″");
   addDimension(afterDimensions, new THREE.Vector3(16, 52, 84), new THREE.Vector3(16, 52, 218), "BBQ SPINE 11′–2″");
   addDimension(afterDimensions, new THREE.Vector3(28, 52, 72), new THREE.Vector3(138, 52, 72), "ARMS 9′–2″");
   addDimension(afterDimensions, new THREE.Vector3(68, 8, 151), new THREE.Vector3(138, 8, 151), "COOK 5′–10″");
   addDimension(afterDimensions, new THREE.Vector3(103, 8, 124), new THREE.Vector3(103, 8, 178), "4′–6″ CLEAR");
   addDimension(afterDimensions, new THREE.Vector3(84, 122, 10), new THREE.Vector3(276, 122, 10), "PERGOLA 16′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(374, 52, 330), new THREE.Vector3(374, 52, 582), "PLANTER LEG 21′–0″");
-  addDimension(afterDimensions, new THREE.Vector3(180, 8, 456), new THREE.Vector3(180, 8, 534), "≈ 6′–6″ GAP");
+  addDimension(afterDimensions, new THREE.Vector3(374, 52, 294), new THREE.Vector3(374, 52, 546), "PLANTER LEG 21′–0″");
+  addDimension(afterDimensions, new THREE.Vector3(180, 8, 420), new THREE.Vector3(180, 8, 498), "≈ 6′–6″ GAP");
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 7, 18), new THREE.Vector3(6, 7, 18), "6″ BORDER", new THREE.Vector3(0, 0, 10));
 
   const houseLabel = textSprite("HOUSE / SOUTH (−Z)", 92, "#8c918e");
-  houseLabel.position.set(186, 112, -145);
+  houseLabel.position.set(222, 112, -168);
   measurementGroup.add(houseLabel);
   const datumLabel = textSprite("DATUM 0,0", 54);
-  datumLabel.position.set(0, 15, -7);
+  datumLabel.position.set(276, 15, -7);
   measurementGroup.add(datumLabel);
   const bbqStatus = textSprite("BBQ POSITION · UNVERIFIED", 108, "#e6a16a", true);
   bbqStatus.position.set(83, 72, 232);
   afterDimensions.add(bbqStatus);
   const planterStatus = textSprite("PLANTER LOCATION · UNVERIFIED", 124, "#e6a16a", true);
-  planterStatus.position.set(234, 62, 596);
+  planterStatus.position.set(234, 62, 560);
   afterDimensions.add(planterStatus);
   const firepitStatus = textSprite("CONSTRUCTION · UNVERIFIED", 112, "#e6a16a", true);
-  firepitStatus.position.set(138, 48, 384);
+  firepitStatus.position.set(138, 48, 348);
   afterDimensions.add(firepitStatus);
   const treeStatus = textSprite("TREE REMOVED · CONFIRMED", 112, "#9fc6af", true);
-  // The existing tree belongs to the fixed photo context, not the mirrored
-  // proposed layout, so pre-compensate its X anchor inside afterDimensions.
-  treeStatus.position.set(PLAN_MIRROR_X - 282, 34, 292);
+  treeStatus.position.set(-6, 34, 292);
   afterDimensions.add(treeStatus);
   const projectOrientation = textSprite("PROJECT AREA · RIGHT FROM PATIO", 126, "#e37b43", true);
   projectOrientation.position.set(96, 22, 270);
@@ -800,9 +803,13 @@ function initializeViewer(
         treeRemovedAfter: true,
         turfOmitted: true,
         renovationRightFromPatio: true,
-        afterLayoutMirrored: true,
+        afterLayoutDirectEastRight: true,
+        planPresentationMirrored: true,
+        mainPadSquare: LOCKED.main.x1 - LOCKED.main.x0 === LOCKED.main.z1 - LOCKED.main.z0,
         patioEastAligned: LOCKED.patio.x1 === LOCKED.main.x1,
         patioNorthEdgeTouchesMain: LOCKED.patio.z1 === LOCKED.main.z0,
+        patioRoofMatchesOverlay: true,
+        houseBulkWestOfPatio: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -833,10 +840,10 @@ function initializeViewer(
   }
 
   const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
-    hero: { position: new THREE.Vector3(188, 78, -96), target: new THREE.Vector3(195, 22, 184) },
+    hero: { position: new THREE.Vector3(90, 64, -100), target: new THREE.Vector3(138, 22, 206) },
     plan: { position: new THREE.Vector3(150, 1320, 180), target: new THREE.Vector3(150, 0, 180) },
     bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(193, 27, 151) },
-    firepit: { position: new THREE.Vector3(-48, 152, 522), target: new THREE.Vector3(138, 12, 384) },
+    firepit: { position: new THREE.Vector3(-48, 152, 486), target: new THREE.Vector3(138, 12, 348) },
     seating: { position: new THREE.Vector3(244, 100, 150), target: new THREE.Vector3(186, 27, 151) },
   };
   let currentView: ViewName = "hero";
@@ -1060,7 +1067,7 @@ export default function BackyardViewer() {
         {phase === "after" ? (
           <>
             <div className="metric-grid">
-              <div><small>Main pad</small><strong>23′ × 26′</strong></div>
+              <div><small>Main pad</small><strong>23′ × 23′</strong></div>
               <div><small>Upper pad</small><strong>12′ × 12′</strong></div>
               <div><small>BBQ footprint</small><strong>76.1 sf</strong></div>
               <div><small>Counter run</small><strong>22′–10″</strong></div>
@@ -1077,11 +1084,12 @@ export default function BackyardViewer() {
               <p>{PERGOLA_OPTIONS[pergola].note}</p>
             </div>
             <div className="status-list">
+              <div><i className="dot exact" /><span><b>Client-corrected:</b> the main pad is a true 23′ square; the right-aligned overlay and covered roof share its east edge.</span></div>
               <div><i className="dot exact" /><span><b>Locked:</b> pads, borders, firepit footprint, BBQ dimensions, pergola/planter plan size.</span></div>
               <div><i className="dot provisional" /><span><b>Unverified:</b> BBQ/pergola placement; planter shown top-right with an approximate 6′–6″ gap; pergola height/roof; firepit construction.</span></div>
               <div><i className="dot photo" /><span><b>Site orientation:</b> the renovation is on the right when viewed from the covered patio.</span></div>
               <div><i className="dot photo" /><span><b>Client direction:</b> the turf pad is omitted entirely from the 3D model.</span></div>
-              <div><i className="dot photo" /><span><b>Photo-calibrated:</b> house massing, curved existing pavers, walls, and gravel context.</span></div>
+              <div><i className="dot photo" /><span><b>Photo-calibrated:</b> house massing is concentrated left of the right-side patio/work area; curved existing pavers, walls, and gravel remain context.</span></div>
               <div><i className="dot exact" /><span><b>Confirmed:</b> the mature tree appears in Before and is removed in After.</span></div>
             </div>
           </>

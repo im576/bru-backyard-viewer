@@ -45,10 +45,10 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
   ]);
 
-  assert.match(viewer, /main:\s*\{ x0: 0, x1: 276, z0: 0, z1: 312 \}/);
+  assert.match(viewer, /main:\s*\{ x0: 0, x1: 276, z0: 0, z1: 276 \}/);
   assert.match(viewer, /patio:\s*\{ x0: 96, x1: 276, z0: -126, z1: 0 \}/);
-  assert.match(viewer, /upper:\s*\{ x0: 66, x1: 210, z0: 312, z1: 456 \}/);
-  assert.match(viewer, /firepit:\s*\{ x0: 102, x1: 174, z0: 348, z1: 420 \}/);
+  assert.match(viewer, /upper:\s*\{ x0: 66, x1: 210, z0: 276, z1: 420 \}/);
+  assert.match(viewer, /firepit:\s*\{ x0: 102, x1: 174, z0: 312, z1: 384 \}/);
   assert.match(viewer, /finishedHeight: 39\.25/);
   assert.match(viewer, /counterRun: 274/);
   assert.match(viewer, /footprintSqFt: 76\.1/);
@@ -57,11 +57,15 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /TREE REMOVED · CONFIRMED/);
   assert.match(viewer, /treeRemovedAfter: true/);
   assert.match(viewer, /turfOmitted: true/);
-  assert.match(viewer, /afterLayoutMirrored: true/);
+  assert.match(viewer, /afterLayoutDirectEastRight: true/);
+  assert.match(viewer, /planPresentationMirrored: true/);
   assert.match(viewer, /afterGroup\.scale\.x = -1/);
-  assert.match(viewer, /afterFixed\.scale\.x = -1/);
+  assert.match(viewer, /beforeGroup\.scale\.x = -1/);
+  assert.match(viewer, /mainPadSquare:/);
   assert.match(viewer, /patioEastAligned:/);
   assert.match(viewer, /patioNorthEdgeTouchesMain:/);
+  assert.match(viewer, /patioRoofMatchesOverlay: true/);
+  assert.match(viewer, /houseBulkWestOfPatio: true/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
   assert.match(viewer, /\+13″ north/);
