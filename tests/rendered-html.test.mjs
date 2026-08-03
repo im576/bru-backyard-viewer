@@ -88,9 +88,16 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /controls\.enableZoom = !mobilePresetOnly/);
   assert.match(viewer, /arrowCameraTour: true/);
   assert.match(viewer, /birdseyeRemoved: true/);
+  assert.match(viewer, /firepitDetailed: true/);
+  assert.match(viewer, /planterPlantingAdded: true/);
+  assert.match(viewer, /planterSceneAdded: true/);
+  assert.match(viewer, /fireToPatioSceneAdded: true/);
+  assert.match(viewer, /pergolaDownlightsAdded: true/);
   assert.match(viewer, /patioLeft:/);
   assert.match(viewer, /patioRight:/);
   assert.match(viewer, /mainForward:/);
+  assert.match(viewer, /planterClose:/);
+  assert.match(viewer, /fireToPatio:/);
   assert.doesNotMatch(viewer, /\bplan:\s*\{/);
   assert.match(viewer, /renovationRightFromPatio: true/);
   assert.match(viewer, /photo-13\.webp/);

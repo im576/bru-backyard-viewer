@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-type SceneName = "patioLeft" | "patioRight" | "mainForward";
+type SceneName = "patioLeft" | "patioRight" | "mainForward" | "planterClose" | "fireToPatio";
 type PergolaOption = "north" | "original";
 
 const LOCKED = {
@@ -65,6 +65,8 @@ const SCENES: { id: SceneName; label: string }[] = [
   { id: "patioLeft", label: "Patio · left" },
   { id: "patioRight", label: "Patio · right" },
   { id: "mainForward", label: "Main area" },
+  { id: "planterClose", label: "Planter" },
+  { id: "fireToPatio", label: "Firepit · patio" },
 ];
 
 const REFERENCE_IMAGES = [
@@ -268,6 +270,12 @@ function initializeViewer(
     screen: new THREE.MeshStandardMaterial({ color: 0x080b0d, roughness: 0.2, metalness: 0.24 }),
     gravel: new THREE.MeshStandardMaterial({ color: 0x555b60, roughness: 1 }),
     path: new THREE.MeshStandardMaterial({ color: 0xb8babc, roughness: 0.96 }),
+    soil: new THREE.MeshStandardMaterial({ color: 0x252823, roughness: 1 }),
+    lavaRock: new THREE.MeshStandardMaterial({ color: 0x211d1d, roughness: 0.98 }),
+    foliageAccent: new THREE.MeshStandardMaterial({ color: 0x75836c, roughness: 0.94 }),
+    flower: new THREE.MeshStandardMaterial({ color: 0xe8ebe4, roughness: 0.8 }),
+    flame: new THREE.MeshStandardMaterial({ color: 0xff8a32, emissive: 0xff4b16, emissiveIntensity: 2.6, transparent: true, opacity: 0.86 }),
+    flameCore: new THREE.MeshStandardMaterial({ color: 0xffe08a, emissive: 0xffa52f, emissiveIntensity: 3.2, transparent: true, opacity: 0.92 }),
     lightGlow: new THREE.MeshStandardMaterial({ color: 0xf2f5f6, emissive: 0xd7e6ef, emissiveIntensity: 1.2, roughness: 0.35 }),
     provisional: new THREE.MeshStandardMaterial({ color: 0xaeb8c1, transparent: true, opacity: 0.6, roughness: 0.78 }),
     conflict: new THREE.MeshBasicMaterial({ color: 0xd63f2f, transparent: true, opacity: 0.22, depthWrite: false }),
@@ -575,15 +583,51 @@ function initializeViewer(
 
   function addFirepit() {
     const g = new THREE.Group();
-    g.name = "Firepit footprint exact; construction provisional";
+    g.name = "Detailed firepit · footprint exact; construction provisional";
     provisionalGroup.add(g);
     const { x0, x1, z0, z1 } = LOCKED.firepit;
-    const inferredHeight = 16;
-    planBox(g, x0, x1, z0, z0 + 12, inferredHeight, 2.65, materials.provisional);
-    planBox(g, x0, x1, z1 - 12, z1, inferredHeight, 2.65, materials.provisional);
-    planBox(g, x0, x0 + 12, z0 + 12, z1 - 12, inferredHeight, 2.65, materials.provisional);
-    planBox(g, x1 - 12, x1, z0 + 12, z1 - 12, inferredHeight, 2.65, materials.provisional);
-    outlineBox(g, 72, inferredHeight, 72, 138, inferredHeight / 2 + 2.65, 348);
+    const wallHeight = 18;
+    const wall = 12;
+    const baseY = 2.65;
+    planBox(g, x0, x1, z0, z0 + wall, wallHeight, baseY, materials.stucco);
+    planBox(g, x0, x1, z1 - wall, z1, wallHeight, baseY, materials.stucco);
+    planBox(g, x0, x0 + wall, z0 + wall, z1 - wall, wallHeight, baseY, materials.stucco);
+    planBox(g, x1 - wall, x1, z0 + wall, z1 - wall, wallHeight, baseY, materials.stucco);
+
+    const capY = baseY + wallHeight;
+    planBox(g, x0 - 1, x1 + 1, z0 - 1, z0 + 13, 3, capY, materials.counter);
+    planBox(g, x0 - 1, x1 + 1, z1 - 13, z1 + 1, 3, capY, materials.counter);
+    planBox(g, x0 - 1, x0 + 13, z0 + 13, z1 - 13, 3, capY, materials.counter);
+    planBox(g, x1 - 13, x1 + 1, z0 + 13, z1 - 13, 3, capY, materials.counter);
+    planBox(g, x0 + 14, x1 - 14, z0 + 14, z1 - 14, 2, baseY + 11, materials.lavaRock);
+
+    const rockPositions = [
+      [122, 334], [130, 332], [139, 334], [148, 332], [155, 337],
+      [124, 345], [134, 343], [145, 345], [153, 348],
+      [122, 357], [131, 361], [140, 356], [149, 360], [156, 356],
+    ];
+    rockPositions.forEach(([x, z], index) => {
+      const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(2.1 + (index % 3) * 0.45, 0), materials.lavaRock);
+      rock.position.set(x, baseY + 15.2, z);
+      rock.scale.y = 0.65;
+      rock.castShadow = true;
+      g.add(rock);
+    });
+    const flames: Array<[number, number, number, number, THREE.Material]> = [
+      [133, 348, 4.2, 14, materials.flame],
+      [142, 350, 3.5, 11, materials.flameCore],
+      [137, 342, 2.8, 9, materials.flameCore],
+    ];
+    flames.forEach(([x, z, radius, height, material], index) => {
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 12), material);
+      flame.position.set(x, capY + height / 2 + 1, z);
+      flame.rotation.z = index === 0 ? -0.14 : index === 1 ? 0.18 : -0.05;
+      g.add(flame);
+    });
+    const glow = new THREE.PointLight(0xff8a45, 34, 110, 2);
+    glow.position.set(138, 29, 348);
+    g.add(glow);
+    outlineBox(g, 72, wallHeight + 3, 72, 138, baseY + (wallHeight + 3) / 2, 348);
   }
 
   function addPlanter() {
@@ -597,6 +641,46 @@ function initializeViewer(
     planBox(g, p.x0, p.x1, p.northLegZ0, p.z1, LOCKED.planter.height, 0, materials.stucco);
     planBox(g, p.eastLegX0 - 1.5, p.x1 + 1.5, p.z0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.whiteMetal);
     planBox(g, p.x0 - 1.5, p.x1 + 1.5, p.northLegZ0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.whiteMetal);
+    planBox(g, p.eastLegX0 + 8, p.x1 - 8, p.z0 + 8, p.z1 - 8, 1.4, LOCKED.planter.height + 0.3, materials.soil);
+    planBox(g, p.x0 + 8, p.eastLegX0 + 8, p.northLegZ0 + 8, p.z1 - 8, 1.4, LOCKED.planter.height + 0.3, materials.soil);
+
+    function addPlant(x: number, z: number, scale: number, accent = false) {
+      if (accent) {
+        cylinder(g, 0.6 * scale, 7 * scale, x, LOCKED.planter.height + 4, z, materials.foliage, 8);
+        [[0, 0, 1], [-4, 1, 0.8], [3.5, 2, 0.72]].forEach(([dx, dz, size], index) => {
+          const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(6.6 * scale * size, 1), materials.foliageAccent);
+          leaf.position.set(x + dx * scale, LOCKED.planter.height + (10 + index * 2) * scale, z + dz * scale);
+          leaf.scale.set(0.88, 1.18, 0.88);
+          leaf.castShadow = true;
+          g.add(leaf);
+        });
+        [[-3, 0], [2, 3], [4, -2]].forEach(([dx, dz]) => {
+          const bloom = new THREE.Mesh(new THREE.SphereGeometry(1.4 * scale, 8, 6), materials.flower);
+          bloom.position.set(x + dx * scale, LOCKED.planter.height + 18 * scale, z + dz * scale);
+          g.add(bloom);
+        });
+        return;
+      }
+
+      // Low-poly agave leaves add a second, recognizably planted silhouette.
+      for (let index = 0; index < 7; index += 1) {
+        const angle = index * (Math.PI * 2 / 7);
+        const leaf = new THREE.Mesh(new THREE.ConeGeometry(2.4 * scale, (index % 2 ? 14 : 18) * scale, 6), materials.foliage);
+        leaf.position.set(
+          x + Math.cos(angle) * 3.2 * scale,
+          LOCKED.planter.height + 8 * scale,
+          z + Math.sin(angle) * 3.2 * scale,
+        );
+        leaf.rotation.order = "YXZ";
+        leaf.rotation.y = -angle;
+        leaf.rotation.z = (index % 2 ? 0.28 : 0.4) * (index % 3 === 0 ? -1 : 1);
+        leaf.castShadow = true;
+        g.add(leaf);
+      }
+    }
+
+    [322, 368, 414, 460, 516].forEach((z, index) => addPlant(p.eastLegX0 + 24, z, index % 2 ? 0.85 : 1.05, index % 2 === 0));
+    [138, 184, 230, 276].forEach((x, index) => addPlant(x, p.northLegZ0 + 24, index % 2 ? 1 : 0.82, index % 2 === 1));
     outlineBox(g, 48, 36, 252, p.eastLegX0 + 24, 18, (p.z0 + p.z1) / 2);
     outlineBox(g, 252, 36, 48, (p.x0 + p.x1) / 2, 18, p.northLegZ0 + 24);
   }
@@ -622,6 +706,12 @@ function initializeViewer(
       box(pergolaRoofGroup, 1, 1.2, w - 12, x, inferredHeight + 3.5, w / 2, materials.charcoal);
     }
 
+    // Warm recessed lights keep the closed roof legible from the evening-style
+    // camera angles without implying a particular fixture product.
+    [[48, 48], [96, 48], [144, 48], [48, 144], [96, 144], [144, 144]].forEach(([x, z]) => {
+      cylinder(pergolaRoofGroup, 2.1, 0.8, x, inferredHeight - 1.4, z, materials.lightGlow, 20);
+    });
+
     // Integrated 16-foot white media wall, TV, soundbar and floating console.
     box(g, 5, 84, w, w - 2.5, 42, w / 2, materials.stucco);
     box(g, 1.4, 40, 68, w - 5.7, 61, w / 2, materials.black);
@@ -629,6 +719,12 @@ function initializeViewer(
     box(g, 1.5, 3, 42, w - 7.1, 38.5, w / 2, materials.black);
     box(g, 10, 9, 76, w - 10, 25, w / 2, materials.whiteMetal);
     [48, 144].forEach((z) => box(g, 1.5, 14, 7, w - 6.8, 62, z, materials.charcoal));
+    cylinder(g, 4.2, 5, w - 16, 32, 70, materials.charcoal, 20);
+    const mediaPlant = new THREE.Mesh(new THREE.IcosahedronGeometry(5.4, 1), materials.foliageAccent);
+    mediaPlant.position.set(w - 16, 38, 70);
+    mediaPlant.scale.set(0.9, 1.15, 0.9);
+    mediaPlant.castShadow = true;
+    g.add(mediaPlant);
 
     // Centered three-blade ceiling fan.
     cylinder(pergolaRoofGroup, 2.1, 12, w / 2, 97, w / 2, materials.charcoal, 20);
@@ -789,6 +885,11 @@ function initializeViewer(
         mobilePresetCameraOnly: true,
         arrowCameraTour: true,
         birdseyeRemoved: true,
+        firepitDetailed: true,
+        planterPlantingAdded: true,
+        planterSceneAdded: true,
+        fireToPatioSceneAdded: true,
+        pergolaDownlightsAdded: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -822,11 +923,17 @@ function initializeViewer(
     patioLeft: { position: new THREE.Vector3(36, 72, -106), target: new THREE.Vector3(235, 28, 168) },
     patioRight: { position: new THREE.Vector3(150, 72, -106), target: new THREE.Vector3(76, 28, 168) },
     mainForward: { position: new THREE.Vector3(138, 64, 212), target: new THREE.Vector3(138, 18, 360) },
+    planterClose: { position: new THREE.Vector3(246, 86, 500), target: new THREE.Vector3(24, 30, 438) },
+    fireToPatio: { position: new THREE.Vector3(138, 68, 414), target: new THREE.Vector3(150, 27, 42) },
   };
   let currentScene: SceneName = "patioLeft";
 
   function updateCameraFov(sceneName: SceneName) {
-    camera.fov = window.innerWidth <= 660 ? (sceneName === "mainForward" ? 70 : 88) : 37;
+    if (window.innerWidth <= 660) {
+      camera.fov = sceneName === "mainForward" ? 70 : sceneName === "planterClose" ? 64 : sceneName === "fireToPatio" ? 74 : 88;
+    } else {
+      camera.fov = 37;
+    }
     camera.updateProjectionMatrix();
   }
 
@@ -834,10 +941,11 @@ function initializeViewer(
     const preset = presets[sceneName];
     const position = preset.position.clone();
     if (window.innerWidth <= 660) {
-      const scale = sceneName === "mainForward" ? 1.08 : 1;
+      const scale = sceneName === "mainForward" ? 1.08 : sceneName === "planterClose" ? 1.06 : sceneName === "fireToPatio" ? 1.04 : 1;
       position.sub(preset.target).multiplyScalar(scale).add(preset.target);
     }
     currentScene = sceneName;
+    updateDebug();
     camera.up.set(0, 1, 0);
     updateCameraFov(sceneName);
     if (immediate) {
