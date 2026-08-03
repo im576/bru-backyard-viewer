@@ -31,8 +31,8 @@ test("server-renders the backyard viewer shell", async () => {
   const html = await response.text();
   assert.match(html, /<title>Backyard Renovation Viewer — Sonoran Horizon<\/title>/i);
   assert.match(html, /Backyard renovation viewer/);
-  assert.match(html, /Before/);
-  assert.match(html, /After/);
+  assert.doesNotMatch(html, />Before</);
+  assert.doesNotMatch(html, /Project phase/);
   assert.match(html, /Measurements/);
   assert.match(html, /Photos/);
   assert.match(html, /Pergola north/);
@@ -60,7 +60,8 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /afterLayoutDirectEastRight: true/);
   assert.match(viewer, /planPresentationMirrored: true/);
   assert.match(viewer, /afterGroup\.scale\.x = -1/);
-  assert.match(viewer, /beforeGroup\.scale\.x = -1/);
+  assert.doesNotMatch(viewer, /const beforeGroup/);
+  assert.doesNotMatch(viewer, /type Phase/);
   assert.match(viewer, /mainPadSquare:/);
   assert.match(viewer, /patioEastAligned:/);
   assert.match(viewer, /patioNorthEdgeTouchesMain:/);
@@ -76,6 +77,11 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /mediaWallIntegrated: true/);
   assert.match(viewer, /leftSideConceptAdded: true/);
   assert.match(viewer, /afterPaletteMonochrome: true/);
+  assert.match(viewer, /beforeModeRemoved: true/);
+  assert.match(viewer, /mobilePresetCameraOnly: true/);
+  assert.match(viewer, /controls\.enableRotate = !mobilePresetOnly/);
+  assert.match(viewer, /controls\.enablePan = !mobilePresetOnly/);
+  assert.match(viewer, /controls\.enableZoom = !mobilePresetOnly/);
   assert.match(viewer, /renovationRightFromPatio: true/);
   assert.match(viewer, /photo-13\.webp/);
   assert.match(layout, /title: "Backyard Renovation Viewer — Sonoran Horizon"/);

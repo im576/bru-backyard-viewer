@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-type Phase = "before" | "after";
 type ViewName = "hero" | "plan" | "bbq" | "firepit" | "seating";
 type PergolaOption = "north" | "original";
 
@@ -86,14 +85,13 @@ declare global {
   interface Window {
     __BRU_DEBUG__?: {
       locked: typeof LOCKED;
-      state: { phase: Phase; measurements: boolean; pergola: PergolaOption };
+      state: { measurements: boolean; pergola: PergolaOption; mobilePresetOnly: boolean };
       checks: Record<string, number | boolean>;
     };
   }
 }
 
 interface ViewerApi {
-  setPhase: (phase: Phase) => void;
   setMeasurements: (visible: boolean) => void;
   setPergola: (option: PergolaOption) => void;
   setView: (view: ViewName, immediate?: boolean) => void;
@@ -276,11 +274,9 @@ function initializeViewer(
     provisional: new THREE.MeshStandardMaterial({ color: 0xaeb8c1, transparent: true, opacity: 0.6, roughness: 0.78 }),
     conflict: new THREE.MeshBasicMaterial({ color: 0xd63f2f, transparent: true, opacity: 0.22, depthWrite: false }),
     ground: new THREE.MeshStandardMaterial({ color: 0x555b5f, roughness: 1 }),
-    existingPaver: new THREE.MeshStandardMaterial({ color: 0xa77a5e, roughness: 0.98 }),
     wall: new THREE.MeshStandardMaterial({ color: 0x5b5e61, roughness: 0.98 }),
     roof: new THREE.MeshStandardMaterial({ color: 0x707579, roughness: 0.94 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x18252a, roughness: 0.28, metalness: 0.18 }),
-    bark: new THREE.MeshStandardMaterial({ color: 0x655343, roughness: 1 }),
     foliage: new THREE.MeshStandardMaterial({ color: 0x536343, roughness: 0.96 }),
   };
 
@@ -318,26 +314,6 @@ function initializeViewer(
     mesh.receiveShadow = true;
     group.add(mesh);
     return mesh;
-  }
-
-  function addTree(group: THREE.Group, x: number, z: number) {
-    const tree = new THREE.Group();
-    tree.name = "Existing mature tree · photo-derived position";
-    group.add(tree);
-    const trunk = cylinder(tree, 8, 116, x, 58, z, materials.bark, 12);
-    trunk.rotation.z = -0.06;
-    [
-      [x - 14, 124, z, 35],
-      [x + 15, 140, z + 4, 32],
-      [x - 2, 158, z - 8, 38],
-      [x + 25, 166, z + 8, 27],
-    ].forEach(([cx, cy, cz, radius]) => {
-      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(radius, 1), materials.foliage);
-      crown.position.set(cx, cy, cz);
-      crown.scale.y = 1.2;
-      crown.castShadow = true;
-      tree.add(crown);
-    });
   }
 
   function planBox(
@@ -389,7 +365,6 @@ function initializeViewer(
   }
 
   const context = new THREE.Group();
-  const beforeGroup = new THREE.Group();
   const afterGroup = new THREE.Group();
   const afterFixed = new THREE.Group();
   const leftSideGroup = new THREE.Group();
@@ -398,23 +373,18 @@ function initializeViewer(
   const pergolaRoofGroup = new THREE.Group();
   const conflictGroup = new THREE.Group();
   const measurementGroup = new THREE.Group();
-  const beforeDimensions = new THREE.Group();
   const afterDimensions = new THREE.Group();
   const afterPaverDimensions = new THREE.Group();
-  scene.add(context, beforeGroup, afterGroup, measurementGroup);
+  scene.add(context, afterGroup, measurementGroup);
   afterGroup.add(afterFixed, leftSideGroup, provisionalGroup, pergolaGroup, conflictGroup);
   pergolaGroup.add(pergolaRoofGroup);
-  measurementGroup.add(beforeDimensions, afterDimensions);
+  measurementGroup.add(afterDimensions);
   afterDimensions.add(afterPaverDimensions);
   afterGroup.name = "After layout · locked coordinates presented east/right";
   afterGroup.position.x = PLAN_PRESENTATION_MIRROR_X;
   afterGroup.scale.x = -1;
-  beforeGroup.position.x = PLAN_PRESENTATION_MIRROR_X;
-  beforeGroup.scale.x = -1;
   afterDimensions.position.x = PLAN_PRESENTATION_MIRROR_X;
   afterDimensions.scale.x = -1;
-  beforeDimensions.position.x = PLAN_PRESENTATION_MIRROR_X;
-  beforeDimensions.scale.x = -1;
   measurementGroup.visible = false;
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(860, 1020), materials.ground);
@@ -459,15 +429,6 @@ function initializeViewer(
 
   const siteVegetation = new THREE.Group();
   context.add(siteVegetation);
-  // The mature tree exists in the current yard and is confirmed for removal.
-  // Keeping it inside the before group makes the scope change explicit when
-  // the same engine switches to the after parameter set.
-  const removableTree = new THREE.Group();
-  removableTree.name = "Confirmed tree removal · before only";
-  beforeGroup.add(removableTree);
-  // Pre-compensate the confirmed tree location so the hardscape presentation
-  // mirror does not move an existing photo landmark.
-  addTree(removableTree, -6, 292);
   [
     [-68, 440, 22],
     [8, 480, 18],
@@ -482,37 +443,7 @@ function initializeViewer(
     siteVegetation.add(shrub);
   });
 
-  // Turf is intentionally omitted from both phases at the client's direction.
-
-  // Before: the actual curved paver patio, concrete pad, portable firepit and prior L-island.
-  planBox(beforeGroup, 96, 276, -126, 0, 2, 0, materials.concrete);
-  const oldPaverShape = new THREE.Shape();
-  oldPaverShape.moveTo(12, -8);
-  oldPaverShape.lineTo(270, -8);
-  oldPaverShape.quadraticCurveTo(294, 58, 284, 126);
-  oldPaverShape.quadraticCurveTo(302, 214, 254, 286);
-  oldPaverShape.quadraticCurveTo(220, 332, 132, 334);
-  oldPaverShape.quadraticCurveTo(48, 330, 12, 272);
-  oldPaverShape.quadraticCurveTo(-16, 174, 4, 64);
-  oldPaverShape.closePath();
-  extrudeFootprint(beforeGroup, oldPaverShape, 2.1, 0, materials.existingPaver);
-
-  const oldFirepit = new THREE.Group();
-  oldFirepit.name = "Existing portable firepit";
-  beforeGroup.add(oldFirepit);
-  const oldCircularPad = cylinder(beforeGroup, 44, 2.3, 224, 1.15, 268, materials.existingPaver, 48);
-  oldCircularPad.name = "Existing circular paver pad · removed after";
-  planBox(oldFirepit, 202, 246, 246, 290, 8, 2.3, materials.black);
-  planBox(oldFirepit, 208, 240, 252, 284, 4, 10.3, materials.charcoal);
-
-  const existingIsland = new THREE.Group();
-  beforeGroup.add(existingIsland);
-  const bx = 28;
-  const bz = 84;
-  planBox(existingIsland, bx, bx + 86, bz, bz + 40, 36.9, 2.1, materials.stucco);
-  planBox(existingIsland, bx, bx + 40, bz, bz + 120, 36.9, 2.1, materials.stucco);
-  planBox(existingIsland, bx - 2, bx + 88, bz - 2, bz + 42, 2.35, 39, materials.counter);
-  planBox(existingIsland, bx - 2, bx + 42, bz - 2, bz + 122, 2.35, 39, materials.counter);
+  // Turf and the confirmed removal tree are omitted from the final proposal.
 
   function addPaverZones() {
     planBox(afterFixed, 0, 276, 0, 276, 2, 0, materials.paver);
@@ -769,22 +700,12 @@ function initializeViewer(
     const tick = Math.abs(direction.x) > Math.abs(direction.z) ? new THREE.Vector3(0, 0, 6) : new THREE.Vector3(6, 0, 0);
     lineBetween(group, a.clone().sub(tick), a.clone().add(tick), material);
     lineBetween(group, b.clone().sub(tick), b.clone().add(tick), material);
-    const mirrored = group === beforeDimensions || group === afterDimensions || group === afterPaverDimensions;
+    const mirrored = group === afterDimensions || group === afterPaverDimensions;
     const label = textSprite(text, Math.max(50, text.length * 4.8), undefined, mirrored);
     label.position.copy(a).add(b).multiplyScalar(0.5).add(labelOffset);
     label.position.y += 8;
     group.add(label);
   }
-
-  addDimension(beforeDimensions, new THREE.Vector3(96, 8, -142), new THREE.Vector3(276, 8, -142), "EXISTING PAD 15′–0″");
-  addDimension(beforeDimensions, new THREE.Vector3(82, 8, -126), new THREE.Vector3(82, 8, 0), "10′–6″");
-  addDimension(beforeDimensions, new THREE.Vector3(28, 48, 218), new THREE.Vector3(28, 48, 84), "EXISTING L-ISLAND");
-  const beforeFirepitStatus = textSprite("PORTABLE FIREPIT / CIRCULAR PAD", 132, "#9eb7c5", true);
-  beforeFirepitStatus.position.set(224, 34, 268);
-  beforeDimensions.add(beforeFirepitStatus);
-  const beforeTreeStatus = textSprite("TREE · REMOVING", 84, "#aeb8c1", true);
-  beforeTreeStatus.position.set(-6, 178, 292);
-  beforeDimensions.add(beforeTreeStatus);
 
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 8, -18), new THREE.Vector3(276, 8, -18), "MAIN PAD 23′–0″");
   addDimension(afterPaverDimensions, new THREE.Vector3(-18, 8, 0), new THREE.Vector3(-18, 8, 276), "23′–0″ SQUARE");
@@ -827,8 +748,8 @@ function initializeViewer(
   pergolaStatus.visible = false;
   pergolaGroup.add(pergolaStatus);
 
-  let phase: Phase = "after";
   let measurementVisible = false;
+  let mobilePresetOnly = window.innerWidth <= 680;
   let pergolaOption: PergolaOption = "north";
   let tween:
     | {
@@ -843,7 +764,7 @@ function initializeViewer(
   function updateDebug() {
     window.__BRU_DEBUG__ = {
       locked: LOCKED,
-      state: { phase, measurements: measurementVisible, pergola: pergolaOption },
+      state: { measurements: measurementVisible, pergola: pergolaOption, mobilePresetOnly },
       checks: {
         mainWidth: LOCKED.main.x1 - LOCKED.main.x0,
         mainDepth: LOCKED.main.z1 - LOCKED.main.z0,
@@ -866,6 +787,8 @@ function initializeViewer(
         mediaWallIntegrated: true,
         leftSideConceptAdded: true,
         afterPaletteMonochrome: true,
+        beforeModeRemoved: true,
+        mobilePresetCameraOnly: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -898,9 +821,9 @@ function initializeViewer(
   const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
     hero: { position: new THREE.Vector3(36, 72, -106), target: new THREE.Vector3(176, 30, 168) },
     plan: { position: new THREE.Vector3(150, 1320, 180), target: new THREE.Vector3(150, 0, 180) },
-    bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(193, 27, 151) },
-    firepit: { position: new THREE.Vector3(-48, 152, 486), target: new THREE.Vector3(138, 12, 348) },
-    seating: { position: new THREE.Vector3(244, 100, 150), target: new THREE.Vector3(186, 27, 151) },
+    bbq: { position: new THREE.Vector3(342, 112, 46), target: new THREE.Vector3(193, 28, 151) },
+    firepit: { position: new THREE.Vector3(300, 118, 455), target: new THREE.Vector3(138, 12, 348) },
+    seating: { position: new THREE.Vector3(334, 76, 230), target: new THREE.Vector3(190, 28, 165) },
   };
   let currentView: ViewName = "hero";
 
@@ -935,20 +858,10 @@ function initializeViewer(
     };
   }
 
-  function setPhase(next: Phase) {
-    phase = next;
-    beforeGroup.visible = phase === "before";
-    afterGroup.visible = phase === "after";
-    beforeDimensions.visible = phase === "before";
-    afterDimensions.visible = phase === "after";
-    pergolaStatus.visible = measurementVisible && phase === "after";
-    updateDebug();
-  }
-
   function setMeasurements(visible: boolean) {
     measurementVisible = visible;
     measurementGroup.visible = visible;
-    pergolaStatus.visible = visible && phase === "after";
+    pergolaStatus.visible = visible;
     updateDebug();
   }
 
@@ -959,9 +872,14 @@ function initializeViewer(
   function resize() {
     const width = mount.clientWidth;
     const height = mount.clientHeight;
+    mobilePresetOnly = width <= 680;
+    controls.enableRotate = !mobilePresetOnly;
+    controls.enablePan = !mobilePresetOnly;
+    controls.enableZoom = !mobilePresetOnly;
     camera.aspect = width / Math.max(1, height);
     updateCameraFov(currentView);
     renderer.setSize(width, height, false);
+    updateDebug();
   }
 
   window.addEventListener("resize", resize);
@@ -969,7 +887,6 @@ function initializeViewer(
     tween = undefined;
   });
   resize();
-  setPhase("after");
   updateConflict("north");
   setView("hero", true);
   updateDebug();
@@ -991,7 +908,6 @@ function initializeViewer(
   requestAnimationFrame(() => requestAnimationFrame(onReady));
 
   return {
-    setPhase,
     setMeasurements,
     setPergola,
     setView,
@@ -1018,7 +934,6 @@ function initializeViewer(
 export default function BackyardViewer() {
   const mountRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<ViewerApi | null>(null);
-  const [phase, setPhaseState] = useState<Phase>("after");
   const [activeView, setActiveView] = useState<ViewName>("hero");
   const [measurements, setMeasurementsState] = useState(false);
   const [pergola, setPergolaState] = useState<PergolaOption>("north");
@@ -1055,12 +970,6 @@ export default function BackyardViewer() {
     };
   }, []);
 
-  function choosePhase(next: Phase) {
-    setPhaseState(next);
-    apiRef.current?.setPhase(next);
-    if (next === "before" && (activeView === "firepit" || activeView === "seating")) chooseView("hero");
-  }
-
   function chooseView(next: ViewName) {
     setActiveView(next);
     apiRef.current?.setView(next);
@@ -1078,7 +987,7 @@ export default function BackyardViewer() {
   }
 
   return (
-    <main className="viewer-shell" data-phase={phase} data-ready={ready ? "true" : "false"}>
+    <main className="viewer-shell" data-ready={ready ? "true" : "false"}>
       <div ref={mountRef} className="viewport" />
       <div className="grain" aria-hidden="true" />
 
@@ -1089,10 +998,6 @@ export default function BackyardViewer() {
             <b>Sonoran Horizon</b>
             <span>Backyard renovation viewer</span>
           </div>
-        </div>
-        <div className="phase-switch" role="group" aria-label="Project phase">
-          <button className={phase === "before" ? "is-active" : ""} onClick={() => choosePhase("before")}>Before</button>
-          <button className={phase === "after" ? "is-active" : ""} onClick={() => choosePhase("after")}>After</button>
         </div>
         <button className={`tool-btn ${measurements ? "is-active" : ""}`} onClick={toggleMeasurements} aria-label="Toggle measurements" aria-pressed={measurements}>
           <span className="measure-icon" aria-hidden="true" />
@@ -1105,12 +1010,10 @@ export default function BackyardViewer() {
         <h1 id="page-title">Black. White. Built to gather.</h1>
       </section>
 
-      {phase === "after" && (
-        <div className={`conflict-badge ${conflict.active ? "is-conflict" : "is-clear"}`} role="status">
-          <span>{conflict.active ? "Original conflict" : "Pergola north"}</span>
-          <strong>{conflict.label}</strong>
-        </div>
-      )}
+      <div className={`conflict-badge ${conflict.active ? "is-conflict" : "is-clear"}`} role="status">
+        <span>{conflict.active ? "Original conflict" : "Pergola north"}</span>
+        <strong>{conflict.label}</strong>
+      </div>
 
       <aside className={`spec-panel ${notesOpen ? "is-open" : ""}`} aria-label="Plan facts and provisional items">
         <div className="spec-head">
@@ -1120,54 +1023,37 @@ export default function BackyardViewer() {
           </div>
           <button className="panel-close" onClick={() => setNotesOpen(false)} aria-label="Close plan notes">×</button>
         </div>
-        {phase === "after" ? (
-          <>
-            <div className="metric-grid">
-              <div><small>Main pad</small><strong>23′ × 23′</strong></div>
-              <div><small>Upper pad</small><strong>12′ × 12′</strong></div>
-              <div><small>BBQ footprint</small><strong>76.1 sf</strong></div>
-              <div><small>Counter run</small><strong>22′–10″</strong></div>
-            </div>
-            <div className="pergola-control">
-              <div className="section-label"><span>Pergola</span><em>concept</em></div>
-              <div className="option-row">
-                {(Object.keys(PERGOLA_OPTIONS) as PergolaOption[]).map((id) => (
-                  <button key={id} className={pergola === id ? "is-active" : ""} onClick={() => choosePergola(id)}>
-                    {PERGOLA_OPTIONS[id].label}
-                  </button>
-                ))}
-              </div>
-              <p>{PERGOLA_OPTIONS[pergola].note}</p>
-            </div>
-            <div className="status-list">
-              <div><i className="dot exact" /><span>23′ square · gray pavers · black border</span></div>
-              <div><i className="dot exact" /><span>White closed pergola · fan · media wall</span></div>
-              <div><i className="dot provisional" /><span>Left landscape is conceptual · no turf</span></div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="metric-grid before-metrics">
-              <div><small>Existing slab</small><strong>15′ × 10′–6″</strong></div>
-              <div><small>Existing island</small><strong>L-shape</strong></div>
-            </div>
-            <div className="status-list">
-              <div><i className="dot exact" /><span>Existing L-island and covered patio</span></div>
-              <div><i className="dot photo" /><span>Curved pavers · portable firepit · tree</span></div>
-            </div>
-          </>
-        )}
+        <div className="metric-grid">
+          <div><small>Main pad</small><strong>23′ × 23′</strong></div>
+          <div><small>Upper pad</small><strong>12′ × 12′</strong></div>
+          <div><small>BBQ footprint</small><strong>76.1 sf</strong></div>
+          <div><small>Counter run</small><strong>22′–10″</strong></div>
+        </div>
+        <div className="pergola-control">
+          <div className="section-label"><span>Pergola</span><em>concept</em></div>
+          <div className="option-row">
+            {(Object.keys(PERGOLA_OPTIONS) as PergolaOption[]).map((id) => (
+              <button key={id} className={pergola === id ? "is-active" : ""} onClick={() => choosePergola(id)}>
+                {PERGOLA_OPTIONS[id].label}
+              </button>
+            ))}
+          </div>
+          <p>{PERGOLA_OPTIONS[pergola].note}</p>
+        </div>
+        <div className="status-list">
+          <div><i className="dot exact" /><span>23′ square · gray pavers · black border</span></div>
+          <div><i className="dot exact" /><span>White closed pergola · fan · media wall</span></div>
+          <div><i className="dot provisional" /><span>Left landscape is conceptual · no turf</span></div>
+        </div>
         <p className="disclaimer">Concept only · verify in field.</p>
       </aside>
 
-      {phase === "after" && (
-        <div className="mobile-pergola" aria-label="Pergola position options">
-          <span>Pergola</span>
-          {(Object.keys(PERGOLA_OPTIONS) as PergolaOption[]).map((id) => (
-            <button key={id} className={pergola === id ? "is-active" : ""} onClick={() => choosePergola(id)}>{PERGOLA_OPTIONS[id].label}</button>
-          ))}
-        </div>
-      )}
+      <div className="mobile-pergola" aria-label="Pergola position options">
+        <span>Pergola</span>
+        {(Object.keys(PERGOLA_OPTIONS) as PergolaOption[]).map((id) => (
+          <button key={id} className={pergola === id ? "is-active" : ""} onClick={() => choosePergola(id)}>{PERGOLA_OPTIONS[id].label}</button>
+        ))}
+      </div>
 
       <button className="reference-btn" onClick={() => setReferencesOpen(true)} aria-label="Open site references">
         <img src="/reference/photo-11.webp" alt="" />
@@ -1196,7 +1082,6 @@ export default function BackyardViewer() {
             key={view.id}
             className={activeView === view.id ? "is-active" : ""}
             onClick={() => chooseView(view.id)}
-            disabled={phase === "before" && (view.id === "firepit" || view.id === "seating")}
           >
             {view.label}
           </button>
