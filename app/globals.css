@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #111416;
-  --panel: rgba(19, 23, 24, 0.9);
-  --panel-solid: #171b1d;
+  --bg: #0b0e11;
+  --panel: rgba(13, 16, 19, 0.91);
+  --panel-solid: #111519;
   --line: rgba(255, 255, 255, 0.13);
   --line-strong: rgba(255, 255, 255, 0.24);
-  --ink: #f3efe7;
-  --muted: #a9aba7;
-  --accent: #e37b43;
-  --accent-soft: rgba(227, 123, 67, 0.16);
+  --ink: #f6f7f7;
+  --muted: #a5acb1;
+  --accent: #e6e9eb;
+  --accent-soft: rgba(230, 233, 235, 0.14);
   --danger: #f05848;
   --exact: #bfd9c8;
-  --provisional: #e6a16a;
-  --pending: #9eb7c5;
+  --provisional: #aeb8c1;
+  --pending: #8ca0ad;
   --sans: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
@@ -33,8 +33,8 @@ button { font: inherit; }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 58% 34%, rgba(137, 125, 103, 0.24), transparent 35%),
-    linear-gradient(155deg, #262b2b 0%, #121517 67%);
+    radial-gradient(circle at 58% 34%, rgba(122, 135, 145, 0.18), transparent 35%),
+    linear-gradient(155deg, #242a2f 0%, #0d1115 67%);
 }
 .viewport canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
 .grain {
@@ -118,7 +118,7 @@ button { font: inherit; }
   font-weight: 750;
   letter-spacing: 0.05em;
 }
-.phase-switch button.is-active { color: #201914; background: var(--accent); }
+.phase-switch button.is-active { color: #101214; background: var(--accent); }
 .tool-btn {
   min-width: 44px;
   min-height: 42px;
@@ -136,7 +136,7 @@ button { font: inherit; }
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.tool-btn.is-active { color: #fff3ea; border-color: rgba(227, 123, 67, 0.62); background: var(--accent-soft); }
+.tool-btn.is-active { color: var(--ink); border-color: rgba(230, 233, 235, 0.58); background: var(--accent-soft); }
 .measure-icon { position: relative; width: 17px; height: 10px; border-top: 1px solid currentColor; border-bottom: 1px solid currentColor; }
 .measure-icon::before, .measure-icon::after { content: ""; position: absolute; top: -3px; width: 1px; height: 14px; background: currentColor; }
 .measure-icon::before { left: 1px; }
@@ -147,7 +147,7 @@ button { font: inherit; }
   z-index: 8;
   left: 28px;
   top: 105px;
-  width: min(370px, calc(100vw - 56px));
+  width: min(310px, calc(100vw - 56px));
   pointer-events: none;
 }
 .eyebrow {
@@ -162,20 +162,12 @@ button { font: inherit; }
 .eyebrow::before { content: ""; width: 24px; height: 1px; background: currentColor; }
 .intro h1 {
   margin: 14px 0 12px;
-  max-width: 360px;
-  font-size: clamp(32px, 4vw, 56px);
+  max-width: 310px;
+  font-size: clamp(30px, 3.7vw, 48px);
   font-weight: 560;
   line-height: 0.96;
   letter-spacing: -0.05em;
   text-shadow: 0 3px 25px rgba(0, 0, 0, 0.58);
-}
-.intro p {
-  margin: 0;
-  max-width: 320px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.55;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.78);
 }
 
 .conflict-badge {
@@ -205,7 +197,7 @@ button { font: inherit; }
   z-index: 11;
   top: 92px;
   right: 18px;
-  width: 286px;
+  width: 264px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -248,7 +240,7 @@ button { font: inherit; }
   font-size: 8px;
   font-weight: 700;
 }
-.option-row button.is-active { color: #fff3ea; border-color: rgba(227, 123, 67, 0.6); background: var(--accent-soft); }
+.option-row button.is-active { color: var(--ink); border-color: rgba(230, 233, 235, 0.55); background: var(--accent-soft); }
 .pergola-control p { margin: 8px 0 0; color: var(--muted); font: 8px/1.35 var(--mono); }
 .status-list { padding: 12px 14px; border-bottom: 1px solid var(--line); }
 .status-list > div { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); font-size: 9px; line-height: 1.45; }
@@ -258,7 +250,7 @@ button { font: inherit; }
 .dot.exact { background: var(--exact); box-shadow: 0 0 0 3px rgba(191, 217, 200, 0.1); }
 .dot.provisional { background: var(--provisional); box-shadow: 0 0 0 3px rgba(230, 161, 106, 0.1); }
 .dot.pending { background: var(--pending); box-shadow: 0 0 0 3px rgba(158, 183, 197, 0.1); }
-.dot.photo { background: #c6ab88; box-shadow: 0 0 0 3px rgba(198, 171, 136, 0.1); }
+.dot.photo { background: #aeb8c1; box-shadow: 0 0 0 3px rgba(174, 184, 193, 0.1); }
 .disclaimer { margin: 0; padding: 11px 14px 13px; color: #92938f; font: 7.5px/1.45 var(--mono); }
 
 .view-dock {
@@ -294,7 +286,7 @@ button { font: inherit; }
   transition: 0.2s ease;
 }
 .view-dock button:hover:not(:disabled) { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
-.view-dock button.is-active { color: #211a16; background: var(--accent); }
+.view-dock button.is-active { color: #101214; background: var(--accent); }
 .view-dock button:disabled { opacity: 0.25; cursor: not-allowed; }
 .boundary-note {
   position: absolute;
@@ -395,9 +387,8 @@ button { font: inherit; }
   .tool-label { display: none; }
   .intro { top: 78px; left: 14px; width: calc(100vw - 28px); }
   .eyebrow { font-size: 8px; }
-  .intro h1 { width: 250px; margin-top: 11px; font-size: 30px; }
-  .intro p { display: none; }
-  .conflict-badge { top: 154px; left: 14px; transform: none; min-width: 178px; justify-content: flex-start; padding: 8px 12px; }
+  .intro h1 { width: 245px; margin-top: 11px; font-size: 28px; }
+  .conflict-badge { top: 148px; left: 14px; transform: none; min-width: 178px; justify-content: flex-start; padding: 8px 12px; }
   .conflict-badge span { font-size: 8px; }
   .conflict-badge strong { font-size: 9px; }
   .spec-panel {
@@ -464,7 +455,7 @@ button { font: inherit; }
   }
   .mobile-pergola span { padding: 0 5px 0 8px; color: var(--muted); font: 7px/1 var(--mono); text-transform: uppercase; }
   .mobile-pergola button { min-height: 32px; padding: 0 8px; border: 0; border-radius: 999px; color: var(--muted); background: transparent; font-size: 7px; font-weight: 750; }
-  .mobile-pergola button.is-active { color: #211a16; background: var(--accent); }
+  .mobile-pergola button.is-active { color: #101214; background: var(--accent); }
 }
 
 @media (max-width: 420px) {

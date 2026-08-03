@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 type Phase = "before" | "after";
 type ViewName = "hero" | "plan" | "bbq" | "firepit" | "seating";
-type PergolaOption = "nominal" | "north13";
+type PergolaOption = "bbqFit" | "original";
 
 const LOCKED = {
   // Client correction: preserve the recorded 23-foot width and use it for
@@ -58,15 +58,15 @@ const PROVISIONAL = {
 const PLAN_PRESENTATION_MIRROR_X = LOCKED.main.x1;
 
 const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: string; note: string }> = {
-  nominal: { x: 84, z: 24, label: "Rev 03", note: "Roof shelters cook zone · southeast post lands on counter" },
-  north13: { x: 84, z: 37, label: "+13″ north", note: "Rev 03 constructability option · post clears counter" },
+  bbqFit: { x: 0, z: 37, label: "BBQ fit", note: "Full island under roof · posts clear counter" },
+  original: { x: 84, z: 24, label: "Original", note: "Reference position · post intersects counter" },
 };
 
 const VIEWS: { id: ViewName; label: string }[] = [
-  { id: "hero", label: "Patio hero" },
+  { id: "hero", label: "Patio" },
   { id: "plan", label: "Plan" },
-  { id: "bbq", label: "Cook zone" },
-  { id: "firepit", label: "Firepit" },
+  { id: "bbq", label: "BBQ" },
+  { id: "firepit", label: "Fire" },
   { id: "seating", label: "Seating" },
 ];
 
@@ -177,7 +177,7 @@ function makePaverTexture(renderer: THREE.WebGLRenderer, border = false) {
   canvas.width = canvas.height = 512;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas textures are unavailable.");
-  ctx.fillStyle = border ? "#725947" : "#a89278";
+  ctx.fillStyle = border ? "#111417" : "#8e9397";
   ctx.fillRect(0, 0, 512, 512);
   const h = 48;
   for (let row = -1; row < 13; row += 1) {
@@ -185,11 +185,11 @@ function makePaverTexture(renderer: THREE.WebGLRenderer, border = false) {
     const offset = row % 2 ? -58 : 0;
     for (let col = -1; col < 7; col += 1) {
       const x = offset + col * 116;
-      const shade = Math.floor((border ? 88 : 139) + random() * 28);
-      const rgb = border ? [shade + 22, shade + 4, shade - 12] : [shade + 18, shade + 5, shade - 12];
+      const shade = Math.floor((border ? 18 : 116) + random() * (border ? 20 : 32));
+      const rgb = border ? [shade, shade + 2, shade + 4] : [shade, shade + 2, shade + 4];
       ctx.fillStyle = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
       ctx.fillRect(x + 2, y + 2, 112, h - 4);
-      ctx.strokeStyle = "rgba(53,43,34,.35)";
+      ctx.strokeStyle = border ? "rgba(0,0,0,.68)" : "rgba(27,31,34,.48)";
       ctx.lineWidth = 2;
       ctx.strokeRect(x + 2, y + 2, 112, h - 4);
     }
@@ -209,8 +209,8 @@ function initializeViewer(
 ): ViewerApi {
   const footprintArea = verifyLockedDimensions();
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1b2020);
-  scene.fog = new THREE.FogExp2(0x1b2020, 0.0012);
+  scene.background = new THREE.Color(0x64727e);
+  scene.fog = new THREE.FogExp2(0x64727e, 0.0011);
 
   const camera = new THREE.PerspectiveCamera(37, 1, 0.5, 2600);
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -219,7 +219,7 @@ function initializeViewer(
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.22;
   renderer.domElement.tabIndex = 0;
   renderer.domElement.setAttribute("aria-label", "Interactive 3D backyard renovation model");
   mount.appendChild(renderer.domElement);
@@ -232,8 +232,8 @@ function initializeViewer(
   controls.maxPolarAngle = Math.PI * 0.495;
   controls.screenSpacePanning = true;
 
-  scene.add(new THREE.HemisphereLight(0xe8edf0, 0x665443, 1.05));
-  const sun = new THREE.DirectionalLight(0xffdfb0, 2.2);
+  scene.add(new THREE.HemisphereLight(0xf5f8fa, 0x626a70, 1.38));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.55);
   sun.position.set(-290, 620, -330);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -245,34 +245,40 @@ function initializeViewer(
   sun.shadow.camera.far = 1400;
   sun.shadow.bias = -0.0004;
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xa6cee0, 0.48);
+  const fill = new THREE.DirectionalLight(0xb8d1df, 0.52);
   fill.position.set(440, 280, 430);
   scene.add(fill);
 
   const paver = makePaverTexture(renderer);
   const borderPaver = makePaverTexture(renderer, true);
-  const stucco = makeNoiseTexture([223, 213, 196], 24, 192, 19);
+  const stucco = makeNoiseTexture([238, 239, 237], 15, 192, 19);
   stucco.repeat.set(2.5, 3.5);
-  const stone = makeNoiseTexture([141, 116, 91], 38, 192, 73);
+  const stone = makeNoiseTexture([151, 154, 157], 26, 192, 73);
   stone.repeat.set(4, 2);
 
   const materials = {
-    paver: new THREE.MeshStandardMaterial({ color: 0xc2ad93, map: paver, roughness: 0.97 }),
-    border: new THREE.MeshStandardMaterial({ color: 0x7a5f4b, map: borderPaver, roughness: 0.98 }),
-    concrete: new THREE.MeshStandardMaterial({ color: 0x96938b, roughness: 1 }),
-    stucco: new THREE.MeshStandardMaterial({ color: 0xe1d6c4, map: stucco, bumpMap: stucco, bumpScale: 0.28, roughness: 0.94 }),
-    stone: new THREE.MeshStandardMaterial({ color: 0x9a7758, map: stone, bumpMap: stone, bumpScale: 0.2, roughness: 0.92 }),
-    counter: new THREE.MeshStandardMaterial({ color: 0x474846, roughness: 0.75 }),
+    paver: new THREE.MeshStandardMaterial({ color: 0xa4a8ab, map: paver, roughness: 0.97 }),
+    border: new THREE.MeshStandardMaterial({ color: 0x111315, map: borderPaver, roughness: 0.98 }),
+    concrete: new THREE.MeshStandardMaterial({ color: 0xa7aaab, roughness: 1 }),
+    stucco: new THREE.MeshStandardMaterial({ color: 0xf1f2ef, map: stucco, bumpMap: stucco, bumpScale: 0.2, roughness: 0.92 }),
+    stone: new THREE.MeshStandardMaterial({ color: 0x9b9fa2, map: stone, bumpMap: stone, bumpScale: 0.16, roughness: 0.9 }),
+    counter: new THREE.MeshStandardMaterial({ color: 0x222629, roughness: 0.68 }),
     metal: new THREE.MeshStandardMaterial({ color: 0xb9c0bf, roughness: 0.28, metalness: 0.82 }),
     black: new THREE.MeshStandardMaterial({ color: 0x080a0b, roughness: 0.7, metalness: 0.08 }),
     charcoal: new THREE.MeshStandardMaterial({ color: 0x2f3434, roughness: 0.58, metalness: 0.44 }),
     stool: new THREE.MeshStandardMaterial({ color: 0x141719, roughness: 0.7, metalness: 0.12 }),
-    provisional: new THREE.MeshStandardMaterial({ color: 0xcf844f, transparent: true, opacity: 0.58, roughness: 0.78 }),
+    whiteMetal: new THREE.MeshStandardMaterial({ color: 0xf3f4f2, roughness: 0.45, metalness: 0.38 }),
+    roofPanel: new THREE.MeshStandardMaterial({ color: 0xe8ebea, roughness: 0.5, metalness: 0.3 }),
+    screen: new THREE.MeshStandardMaterial({ color: 0x080b0d, roughness: 0.2, metalness: 0.24 }),
+    gravel: new THREE.MeshStandardMaterial({ color: 0x555b60, roughness: 1 }),
+    path: new THREE.MeshStandardMaterial({ color: 0xb8babc, roughness: 0.96 }),
+    lightGlow: new THREE.MeshStandardMaterial({ color: 0xf2f5f6, emissive: 0xd7e6ef, emissiveIntensity: 1.2, roughness: 0.35 }),
+    provisional: new THREE.MeshStandardMaterial({ color: 0xaeb8c1, transparent: true, opacity: 0.6, roughness: 0.78 }),
     conflict: new THREE.MeshBasicMaterial({ color: 0xd63f2f, transparent: true, opacity: 0.22, depthWrite: false }),
-    ground: new THREE.MeshStandardMaterial({ color: 0x766654, roughness: 1 }),
+    ground: new THREE.MeshStandardMaterial({ color: 0x555b5f, roughness: 1 }),
     existingPaver: new THREE.MeshStandardMaterial({ color: 0xa77a5e, roughness: 0.98 }),
-    wall: new THREE.MeshStandardMaterial({ color: 0x735447, roughness: 0.98 }),
-    roof: new THREE.MeshStandardMaterial({ color: 0x9b806f, roughness: 0.94 }),
+    wall: new THREE.MeshStandardMaterial({ color: 0x5b5e61, roughness: 0.98 }),
+    roof: new THREE.MeshStandardMaterial({ color: 0x707579, roughness: 0.94 }),
     glass: new THREE.MeshStandardMaterial({ color: 0x18252a, roughness: 0.28, metalness: 0.18 }),
     bark: new THREE.MeshStandardMaterial({ color: 0x655343, roughness: 1 }),
     foliage: new THREE.MeshStandardMaterial({ color: 0x536343, roughness: 0.96 }),
@@ -355,10 +361,10 @@ function initializeViewer(
     x: number,
     y: number,
     z: number,
-    color = 0xe39a63,
+    color = 0xaab2b8,
   ) {
     const geometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(width, height, depth));
-    const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 }));
+    const lines = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.62 }));
     lines.position.set(x, y, z);
     group.add(lines);
     return lines;
@@ -386,15 +392,18 @@ function initializeViewer(
   const beforeGroup = new THREE.Group();
   const afterGroup = new THREE.Group();
   const afterFixed = new THREE.Group();
+  const leftSideGroup = new THREE.Group();
   const provisionalGroup = new THREE.Group();
   const pergolaGroup = new THREE.Group();
+  const pergolaRoofGroup = new THREE.Group();
   const conflictGroup = new THREE.Group();
   const measurementGroup = new THREE.Group();
   const beforeDimensions = new THREE.Group();
   const afterDimensions = new THREE.Group();
   const afterPaverDimensions = new THREE.Group();
   scene.add(context, beforeGroup, afterGroup, measurementGroup);
-  afterGroup.add(afterFixed, provisionalGroup, pergolaGroup, conflictGroup);
+  afterGroup.add(afterFixed, leftSideGroup, provisionalGroup, pergolaGroup, conflictGroup);
+  pergolaGroup.add(pergolaRoofGroup);
   measurementGroup.add(beforeDimensions, afterDimensions);
   afterDimensions.add(afterPaverDimensions);
   afterGroup.name = "After layout · locked coordinates presented east/right";
@@ -413,7 +422,7 @@ function initializeViewer(
   ground.position.set(162, -1.2, 150);
   ground.receiveShadow = true;
   context.add(ground);
-  const grid = new THREE.GridHelper(720, 60, 0x88745f, 0x554d43);
+  const grid = new THREE.GridHelper(720, 60, 0x7d858b, 0x454b50);
   grid.position.set(162, -0.8, 165);
   const gridMaterial = grid.material as THREE.Material;
   gridMaterial.transparent = true;
@@ -524,6 +533,29 @@ function initializeViewer(
     planBox(afterFixed, 66, 210, 414, 420, 0.65, 2, materials.border);
   }
 
+  function addLeftSideLandscape() {
+    leftSideGroup.name = "Left-side landscape concept · turf omitted";
+    planBox(leftSideGroup, -108, -8, -6, 426, 1.2, -0.1, materials.gravel);
+    planBox(leftSideGroup, -10, -5, -6, 426, 1.3, 0.9, materials.border);
+
+    // Large-format stepping pads and restrained planting carry the new palette
+    // into the previously empty side of the yard without restoring the turf.
+    [34, 104, 174, 244, 314, 384].forEach((z) => {
+      planBox(leftSideGroup, -82, -24, z, z + 34, 1.7, 1.1, materials.path);
+    });
+    [62, 168, 274, 380].forEach((z) => {
+      box(leftSideGroup, 3, 18, 3, -94, 9, z, materials.black);
+      box(leftSideGroup, 4.2, 1.6, 4.2, -94, 18.8, z, materials.lightGlow);
+    });
+    [48, 145, 228, 342, 405].forEach((z, index) => {
+      const shrub = new THREE.Mesh(new THREE.IcosahedronGeometry(index % 2 ? 12 : 15, 1), materials.foliage);
+      shrub.position.set(index % 2 ? -96 : -90, 8, z);
+      shrub.scale.set(1, 0.62, 1);
+      shrub.castShadow = true;
+      leftSideGroup.add(shrub);
+    });
+  }
+
   function addBbq() {
     const g = new THREE.Group();
     g.name = "BBQ viewer proposed U-island; yard position provisional";
@@ -604,7 +636,7 @@ function initializeViewer(
     });
 
     // The supplied clear cook zone is 5'-10" X by 4'-6" Z, matching the first viewer.
-    const cookZoneMaterial = new THREE.MeshBasicMaterial({ color: 0xe37b43, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false });
+    const cookZoneMaterial = new THREE.MeshBasicMaterial({ color: 0xdfe4e7, transparent: true, opacity: 0.11, side: THREE.DoubleSide, depthWrite: false });
     const cookZone = new THREE.Mesh(new THREE.PlaneGeometry(LOCKED.bbq.cookDepth, LOCKED.bbq.cookWidth), cookZoneMaterial);
     cookZone.rotation.x = -Math.PI / 2;
     cookZone.position.set(x0 + counterWidth + LOCKED.bbq.cookDepth / 2, 3.05, z0 + counterWidth + LOCKED.bbq.cookWidth / 2);
@@ -632,45 +664,63 @@ function initializeViewer(
     const p = PROVISIONAL.planter;
     // Top-right placement requested by the client. Both outer-face legs remain
     // exactly 252 inches; the 78-inch gap to the upper pad is approximate.
-    planBox(g, p.eastLegX0, p.x1, p.z0, p.z1, LOCKED.planter.height, 0, materials.stone);
-    planBox(g, p.x0, p.x1, p.northLegZ0, p.z1, LOCKED.planter.height, 0, materials.stone);
-    planBox(g, p.eastLegX0 - 1.5, p.x1 + 1.5, p.z0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.counter);
-    planBox(g, p.x0 - 1.5, p.x1 + 1.5, p.northLegZ0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.counter);
-    for (let z = p.z0 + 24; z < p.z1; z += 24) box(g, 0.8, 32, 0.8, p.eastLegX0 + 24, 16, z, materials.black);
-    for (let x = p.x0 + 24; x < p.x1; x += 24) box(g, 0.8, 32, 0.8, x, 16, p.northLegZ0 + 24, materials.black);
+    planBox(g, p.eastLegX0, p.x1, p.z0, p.z1, LOCKED.planter.height, 0, materials.stucco);
+    planBox(g, p.x0, p.x1, p.northLegZ0, p.z1, LOCKED.planter.height, 0, materials.stucco);
+    planBox(g, p.eastLegX0 - 1.5, p.x1 + 1.5, p.z0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.whiteMetal);
+    planBox(g, p.x0 - 1.5, p.x1 + 1.5, p.northLegZ0 - 1.5, p.z1 + 1.5, 3, LOCKED.planter.height, materials.whiteMetal);
     outlineBox(g, 48, 36, 252, p.eastLegX0 + 24, 18, (p.z0 + p.z1) / 2);
     outlineBox(g, 252, 36, 48, (p.x0 + p.x1) / 2, 18, p.northLegZ0 + 24);
   }
 
   function buildPergola() {
     const g = pergolaGroup;
-    g.name = "Pergola location, height and roof provisional";
+    g.name = "White closed-roof pergola · placement and height provisional";
     const w = LOCKED.pergola.width;
     const inferredHeight = 108;
     const post = 5;
     [[8, 8], [w - 8, 8], [8, w - 8], [w - 8, w - 8]].forEach(([x, z]) => {
-      box(g, post, inferredHeight, post, x, inferredHeight / 2, z, materials.charcoal);
+      box(g, post, inferredHeight, post, x, inferredHeight / 2, z, materials.whiteMetal);
       outlineBox(g, post, inferredHeight, post, x, inferredHeight / 2, z);
     });
-    box(g, w, 5, 5, w / 2, inferredHeight - 2.5, 4, materials.charcoal);
-    box(g, w, 5, 5, w / 2, inferredHeight - 2.5, w - 4, materials.charcoal);
-    box(g, 5, 5, w, 4, inferredHeight - 2.5, w / 2, materials.charcoal);
-    box(g, 5, 5, w, w - 4, inferredHeight - 2.5, w / 2, materials.charcoal);
-    for (let x = 12; x <= 180; x += 14) {
-      box(g, 2.5, 2.5, w - 12, x, inferredHeight + 1, w / 2, materials.provisional);
+    box(g, w, 6, 6, w / 2, inferredHeight - 3, 4, materials.whiteMetal);
+    box(g, w, 6, 6, w / 2, inferredHeight - 3, w - 4, materials.whiteMetal);
+    box(g, 6, 6, w, 4, inferredHeight - 3, w / 2, materials.whiteMetal);
+    box(g, 6, 6, w, w - 4, inferredHeight - 3, w / 2, materials.whiteMetal);
+
+    // Closed roof with subtle standing seams.
+    box(pergolaRoofGroup, w - 8, 4, w - 8, w / 2, inferredHeight + 1, w / 2, materials.roofPanel);
+    for (let x = 24; x < w - 12; x += 24) {
+      box(pergolaRoofGroup, 1, 1.2, w - 12, x, inferredHeight + 3.5, w / 2, materials.charcoal);
     }
-    // 16-foot media wall on the east side; height remains visibly provisional.
-    box(g, 4, 80, w, w - 2, 40, w / 2, materials.provisional);
+
+    // Integrated 16-foot white media wall, TV, soundbar and floating console.
+    box(g, 5, 84, w, 2.5, 42, w / 2, materials.stucco);
+    box(g, 1.4, 40, 68, 5.7, 61, w / 2, materials.black);
+    box(g, 0.9, 35, 62, 6.9, 61, w / 2, materials.screen);
+    box(g, 1.5, 3, 42, 7.1, 38.5, w / 2, materials.black);
+    box(g, 10, 9, 76, 10, 25, w / 2, materials.whiteMetal);
+    [48, 144].forEach((z) => box(g, 1.5, 14, 7, 6.8, 62, z, materials.charcoal));
+
+    // Centered three-blade ceiling fan.
+    cylinder(pergolaRoofGroup, 2.1, 12, w / 2, 97, w / 2, materials.charcoal, 20);
+    cylinder(pergolaRoofGroup, 5.2, 4.5, w / 2, 89.5, w / 2, materials.charcoal, 28);
+    for (let i = 0; i < 3; i += 1) {
+      const blade = box(pergolaRoofGroup, 34, 1.5, 6, w / 2 + 18, 88.4, w / 2, materials.charcoal);
+      blade.geometry.translate(-18, 0, 0);
+      blade.position.set(w / 2, 88.4, w / 2);
+      blade.rotation.y = i * (Math.PI * 2 / 3);
+    }
     outlineBox(g, w, inferredHeight, w, w / 2, inferredHeight / 2, w / 2);
   }
 
   addPaverZones();
+  addLeftSideLandscape();
   addBbq();
   addFirepit();
   addPlanter();
   buildPergola();
 
-  function labelTexture(text: string, accent = "#e37b43") {
+  function labelTexture(text: string, accent = "#dfe4e7") {
     const canvas = document.createElement("canvas");
     canvas.width = 768;
     canvas.height = 192;
@@ -683,7 +733,7 @@ function initializeViewer(
     ctx.roundRect(8, 16, 752, 160, 34);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = "#f4eee4";
+    ctx.fillStyle = "#f4f6f7";
     ctx.font = "700 54px ui-monospace, SFMono-Regular, Consolas, monospace";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -713,7 +763,7 @@ function initializeViewer(
     text: string,
     labelOffset = new THREE.Vector3(),
   ) {
-    const material = new THREE.LineBasicMaterial({ color: 0xe37b43, transparent: true, opacity: 0.96, depthTest: false });
+    const material = new THREE.LineBasicMaterial({ color: 0xdfe4e7, transparent: true, opacity: 0.96, depthTest: false });
     lineBetween(group, a, b, material);
     const direction = new THREE.Vector3().subVectors(b, a).normalize();
     const tick = Math.abs(direction.x) > Math.abs(direction.z) ? new THREE.Vector3(0, 0, 6) : new THREE.Vector3(6, 0, 0);
@@ -732,7 +782,7 @@ function initializeViewer(
   const beforeFirepitStatus = textSprite("PORTABLE FIREPIT / CIRCULAR PAD", 132, "#9eb7c5", true);
   beforeFirepitStatus.position.set(224, 34, 268);
   beforeDimensions.add(beforeFirepitStatus);
-  const beforeTreeStatus = textSprite("TREE · REMOVING", 84, "#e6a16a", true);
+  const beforeTreeStatus = textSprite("TREE · REMOVING", 84, "#aeb8c1", true);
   beforeTreeStatus.position.set(-6, 178, 292);
   beforeDimensions.add(beforeTreeStatus);
 
@@ -746,7 +796,7 @@ function initializeViewer(
   addDimension(afterDimensions, new THREE.Vector3(28, 52, 72), new THREE.Vector3(138, 52, 72), "ARMS 9′–2″");
   addDimension(afterDimensions, new THREE.Vector3(68, 8, 151), new THREE.Vector3(138, 8, 151), "COOK 5′–10″");
   addDimension(afterDimensions, new THREE.Vector3(103, 8, 124), new THREE.Vector3(103, 8, 178), "4′–6″ CLEAR");
-  addDimension(afterDimensions, new THREE.Vector3(84, 122, 10), new THREE.Vector3(276, 122, 10), "PERGOLA 16′–0″");
+  addDimension(afterDimensions, new THREE.Vector3(0, 122, 23), new THREE.Vector3(192, 122, 23), "PERGOLA 16′–0″");
   addDimension(afterDimensions, new THREE.Vector3(374, 52, 294), new THREE.Vector3(374, 52, 546), "PLANTER LEG 21′–0″");
   addDimension(afterDimensions, new THREE.Vector3(180, 8, 420), new THREE.Vector3(180, 8, 498), "≈ 6′–6″ GAP");
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 7, 18), new THREE.Vector3(6, 7, 18), "6″ BORDER", new THREE.Vector3(0, 0, 10));
@@ -757,29 +807,29 @@ function initializeViewer(
   const datumLabel = textSprite("DATUM 0,0", 54);
   datumLabel.position.set(276, 15, -7);
   measurementGroup.add(datumLabel);
-  const bbqStatus = textSprite("BBQ POSITION · UNVERIFIED", 108, "#e6a16a", true);
+  const bbqStatus = textSprite("BBQ POSITION · UNVERIFIED", 108, "#aeb8c1", true);
   bbqStatus.position.set(83, 72, 232);
   afterDimensions.add(bbqStatus);
-  const planterStatus = textSprite("PLANTER LOCATION · UNVERIFIED", 124, "#e6a16a", true);
+  const planterStatus = textSprite("PLANTER LOCATION · UNVERIFIED", 124, "#aeb8c1", true);
   planterStatus.position.set(234, 62, 560);
   afterDimensions.add(planterStatus);
-  const firepitStatus = textSprite("CONSTRUCTION · UNVERIFIED", 112, "#e6a16a", true);
+  const firepitStatus = textSprite("CONSTRUCTION · UNVERIFIED", 112, "#aeb8c1", true);
   firepitStatus.position.set(138, 48, 348);
   afterDimensions.add(firepitStatus);
   const treeStatus = textSprite("TREE REMOVED · CONFIRMED", 112, "#9fc6af", true);
   treeStatus.position.set(-6, 34, 292);
   afterDimensions.add(treeStatus);
-  const projectOrientation = textSprite("PROJECT AREA · RIGHT FROM PATIO", 126, "#e37b43", true);
+  const projectOrientation = textSprite("PROJECT AREA · RIGHT FROM PATIO", 126, "#dfe4e7", true);
   projectOrientation.position.set(96, 22, 270);
   afterDimensions.add(projectOrientation);
-  const pergolaStatus = textSprite("PLACEMENT / HEIGHT / ROOF · UNVERIFIED", 154, "#e6a16a", true);
+  const pergolaStatus = textSprite("PLACEMENT / HEIGHT · UNVERIFIED", 132, "#aeb8c1", true);
   pergolaStatus.position.set(96, 132, 96);
   pergolaStatus.visible = false;
   pergolaGroup.add(pergolaStatus);
 
   let phase: Phase = "after";
   let measurementVisible = false;
-  let pergolaOption: PergolaOption = "nominal";
+  let pergolaOption: PergolaOption = "bbqFit";
   let tween:
     | {
         start: number;
@@ -810,6 +860,11 @@ function initializeViewer(
         patioNorthEdgeTouchesMain: LOCKED.patio.z1 === LOCKED.main.z0,
         patioRoofMatchesOverlay: true,
         houseBulkWestOfPatio: true,
+        pergolaBbqFit: true,
+        closedPergola: true,
+        mediaWallIntegrated: true,
+        leftSideConceptAdded: true,
+        afterPaletteMonochrome: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -820,27 +875,27 @@ function initializeViewer(
     conflictGroup.clear();
     const p = PERGOLA_OPTIONS[option];
     pergolaGroup.position.set(p.x, 0, p.z);
-    // The roof-over-cook-zone overlap is intentional. Rev 03's actual issue is
-    // the southeast 5-inch post landing on the north BBQ counter.
+    // Keep the original sketch position available for comparison; the default
+    // option shifts the roof west and north so the entire U-island is covered.
     const postX = p.x + 8;
     const postZ = p.z + LOCKED.pergola.depth - 8;
-    const active = option === "nominal";
+    const active = option === "original";
     if (active) {
       box(conflictGroup, 9, 108, 9, postX, 54, postZ, materials.conflict);
       outlineBox(conflictGroup, 9, 108, 9, postX, 54, postZ, 0xf05848);
       const label = textSprite("POST ON COUNTER", 92, "#f05848", true);
       label.position.set(postX, 118, postZ);
       conflictGroup.add(label);
-      onConflict("5″ post on BBQ counter", true);
+      onConflict("Post on counter", true);
     } else {
-      onConflict(p.note, false);
+      onConflict("BBQ fully covered", false);
     }
     pergolaOption = option;
     updateDebug();
   }
 
   const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
-    hero: { position: new THREE.Vector3(90, 64, -100), target: new THREE.Vector3(138, 22, 206) },
+    hero: { position: new THREE.Vector3(36, 72, -106), target: new THREE.Vector3(176, 30, 168) },
     plan: { position: new THREE.Vector3(150, 1320, 180), target: new THREE.Vector3(150, 0, 180) },
     bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(193, 27, 151) },
     firepit: { position: new THREE.Vector3(-48, 152, 486), target: new THREE.Vector3(138, 12, 348) },
@@ -861,6 +916,7 @@ function initializeViewer(
       position.sub(preset.target).multiplyScalar(scale).add(preset.target);
     }
     currentView = view;
+    pergolaRoofGroup.visible = view !== "plan";
     camera.up.set(0, view === "plan" ? 0 : 1, view === "plan" ? 1 : 0);
     updateCameraFov(view);
     if (immediate) {
@@ -913,7 +969,7 @@ function initializeViewer(
   });
   resize();
   setPhase("after");
-  updateConflict("nominal");
+  updateConflict("bbqFit");
   setView("hero", true);
   updateDebug();
 
@@ -964,8 +1020,8 @@ export default function BackyardViewer() {
   const [phase, setPhaseState] = useState<Phase>("after");
   const [activeView, setActiveView] = useState<ViewName>("hero");
   const [measurements, setMeasurementsState] = useState(false);
-  const [pergola, setPergolaState] = useState<PergolaOption>("nominal");
-  const [conflict, setConflict] = useState({ label: "5″ post on BBQ counter", active: true });
+  const [pergola, setPergolaState] = useState<PergolaOption>("bbqFit");
+  const [conflict, setConflict] = useState({ label: "BBQ fully covered", active: false });
   const [notesOpen, setNotesOpen] = useState(false);
   const [referencesOpen, setReferencesOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -1044,14 +1100,13 @@ export default function BackyardViewer() {
       </header>
 
       <section className="intro" aria-labelledby="page-title">
-        <div className="eyebrow">Patio view · 1 unit = 1 inch</div>
-        <h1 id="page-title">A yard you can walk around.</h1>
-        <p>Start at the covered patio and look into the right side of the yard. Drag to orbit, then compare the two pergola positions.</p>
+        <div className="eyebrow">Irvin backyard · interactive 3D</div>
+        <h1 id="page-title">Black. White. Built to gather.</h1>
       </section>
 
       {phase === "after" && (
         <div className={`conflict-badge ${conflict.active ? "is-conflict" : "is-clear"}`} role="status">
-          <span>{conflict.active ? "Post conflict" : "Post clear"}</span>
+          <span>{conflict.active ? "Original conflict" : "Pergola fit"}</span>
           <strong>{conflict.label}</strong>
         </div>
       )}
@@ -1059,8 +1114,8 @@ export default function BackyardViewer() {
       <aside className={`spec-panel ${notesOpen ? "is-open" : ""}`} aria-label="Plan facts and provisional items">
         <div className="spec-head">
           <div>
-            <span>Plan intelligence</span>
-            <small>Datum SW main pad · Rev 03</small>
+            <span>Plan</span>
+            <small>1 unit = 1 inch</small>
           </div>
           <button className="panel-close" onClick={() => setNotesOpen(false)} aria-label="Close plan notes">×</button>
         </div>
@@ -1073,7 +1128,7 @@ export default function BackyardViewer() {
               <div><small>Counter run</small><strong>22′–10″</strong></div>
             </div>
             <div className="pergola-control">
-              <div className="section-label"><span>Pergola position</span><em>unverified</em></div>
+              <div className="section-label"><span>Pergola</span><em>concept</em></div>
               <div className="option-row">
                 {(Object.keys(PERGOLA_OPTIONS) as PergolaOption[]).map((id) => (
                   <button key={id} className={pergola === id ? "is-active" : ""} onClick={() => choosePergola(id)}>
@@ -1084,13 +1139,9 @@ export default function BackyardViewer() {
               <p>{PERGOLA_OPTIONS[pergola].note}</p>
             </div>
             <div className="status-list">
-              <div><i className="dot exact" /><span><b>Client-corrected:</b> the main pad is a true 23′ square; the right-aligned overlay and covered roof share its east edge.</span></div>
-              <div><i className="dot exact" /><span><b>Locked:</b> pads, borders, firepit footprint, BBQ dimensions, pergola/planter plan size.</span></div>
-              <div><i className="dot provisional" /><span><b>Unverified:</b> BBQ/pergola placement; planter shown top-right with an approximate 6′–6″ gap; pergola height/roof; firepit construction.</span></div>
-              <div><i className="dot photo" /><span><b>Site orientation:</b> the renovation is on the right when viewed from the covered patio.</span></div>
-              <div><i className="dot photo" /><span><b>Client direction:</b> the turf pad is omitted entirely from the 3D model.</span></div>
-              <div><i className="dot photo" /><span><b>Photo-calibrated:</b> house massing is concentrated left of the right-side patio/work area; curved existing pavers, walls, and gravel remain context.</span></div>
-              <div><i className="dot exact" /><span><b>Confirmed:</b> the mature tree appears in Before and is removed in After.</span></div>
+              <div><i className="dot exact" /><span>23′ square · gray pavers · black border</span></div>
+              <div><i className="dot exact" /><span>White closed pergola · fan · media wall</span></div>
+              <div><i className="dot provisional" /><span>Left landscape is conceptual · no turf</span></div>
             </div>
           </>
         ) : (
@@ -1100,13 +1151,12 @@ export default function BackyardViewer() {
               <div><small>Existing island</small><strong>L-shape</strong></div>
             </div>
             <div className="status-list">
-              <div><i className="dot exact" /><span>The existing island uses the geometry from the prior BBQ viewer.</span></div>
-              <div><i className="dot photo" /><span>The portable firepit sits on the existing circular paver pad; both appear only in Before and are removed in After.</span></div>
-              <div><i className="dot photo" /><span>The curved pavers, gravel, house, walls, and mature tree are reconstructed from the supplied images.</span></div>
+              <div><i className="dot exact" /><span>Existing L-island and covered patio</span></div>
+              <div><i className="dot photo" /><span>Curved pavers · portable firepit · tree</span></div>
             </div>
           </>
         )}
-        <p className="disclaimer">Visualization for client understanding and option comparison only — not fabrication, engineering, permitting, or field layout.</p>
+        <p className="disclaimer">Concept only · verify in field.</p>
       </aside>
 
       {phase === "after" && (
@@ -1120,10 +1170,9 @@ export default function BackyardViewer() {
 
       <button className="reference-btn" onClick={() => setReferencesOpen(true)} aria-label="Open site references">
         <img src="/reference/photo-11.webp" alt="" />
-        <span>Site references</span>
+        <span>Photos</span>
       </button>
-      <button className="notes-btn" onClick={() => setNotesOpen(true)}>Plan notes</button>
-      <p className="boundary-note">Concept visualization · verify all provisional items in field</p>
+      <button className="notes-btn" onClick={() => setNotesOpen(true)}>Details</button>
 
       <section className={`reference-drawer ${referencesOpen ? "is-open" : ""}`} aria-label="Supplied site reference images" aria-hidden={!referencesOpen}>
         <div className="reference-head">

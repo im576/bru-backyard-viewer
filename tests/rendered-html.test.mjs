@@ -34,9 +34,9 @@ test("server-renders the backyard viewer shell", async () => {
   assert.match(html, /Before/);
   assert.match(html, /After/);
   assert.match(html, /Measurements/);
-  assert.match(html, /Site references/);
-  assert.match(html, /Post conflict/);
-  assert.match(html, /not fabrication, engineering, permitting, or field layout/);
+  assert.match(html, /Photos/);
+  assert.match(html, /Pergola fit/);
+  assert.match(html, /Concept only · verify in field/);
 });
 
 test("keeps exact dimensions and provisional decisions explicit", async () => {
@@ -53,7 +53,7 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /counterRun: 274/);
   assert.match(viewer, /footprintSqFt: 76\.1/);
   assert.match(viewer, /width: 192, depth: 192/);
-  assert.match(viewer, /Post conflict/);
+  assert.match(viewer, /Original conflict/);
   assert.match(viewer, /TREE REMOVED · CONFIRMED/);
   assert.match(viewer, /treeRemovedAfter: true/);
   assert.match(viewer, /turfOmitted: true/);
@@ -68,7 +68,13 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /houseBulkWestOfPatio: true/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
-  assert.match(viewer, /\+13″ north/);
+  assert.match(viewer, /bbqFit: \{ x: 0, z: 37/);
+  assert.match(viewer, /original: \{ x: 84, z: 24/);
+  assert.match(viewer, /pergolaBbqFit: true/);
+  assert.match(viewer, /closedPergola: true/);
+  assert.match(viewer, /mediaWallIntegrated: true/);
+  assert.match(viewer, /leftSideConceptAdded: true/);
+  assert.match(viewer, /afterPaletteMonochrome: true/);
   assert.match(viewer, /renovationRightFromPatio: true/);
   assert.match(viewer, /photo-13\.webp/);
   assert.match(layout, /title: "Backyard Renovation Viewer — Sonoran Horizon"/);
