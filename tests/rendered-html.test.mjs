@@ -35,7 +35,7 @@ test("server-renders the backyard viewer shell", async () => {
   assert.match(html, /After/);
   assert.match(html, /Measurements/);
   assert.match(html, /Site references/);
-  assert.match(html, /Layout conflict/);
+  assert.match(html, /Post conflict/);
   assert.match(html, /not fabrication, engineering, permitting, or field layout/);
 });
 
@@ -53,10 +53,13 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /counterRun: 274/);
   assert.match(viewer, /footprintSqFt: 76\.1/);
   assert.match(viewer, /width: 192, depth: 192/);
-  assert.match(viewer, /Layout conflict/);
+  assert.match(viewer, /Post conflict/);
   assert.match(viewer, /TREE REMOVED · CONFIRMED/);
   assert.match(viewer, /treeRemovedAfter: true/);
-  assert.match(viewer, /turfLeftFromPatio: true/);
+  assert.match(viewer, /turfOmitted: true/);
+  assert.match(viewer, /clearanceFromUpper: 78/);
+  assert.match(viewer, /≈ 6′–6″ GAP/);
+  assert.match(viewer, /\+13″ north/);
   assert.match(viewer, /renovationRightFromPatio: true/);
   assert.match(viewer, /photo-13\.webp/);
   assert.match(layout, /title: "Backyard Renovation Viewer — Sonoran Horizon"/);

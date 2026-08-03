@@ -20,6 +20,7 @@
 /.wrangler/
 /outputs/
 /output/
+/tmp/
 /work/
 
 # local cloud-hydration backups
