@@ -35,7 +35,7 @@ test("server-renders the backyard viewer shell", async () => {
   assert.match(html, /After/);
   assert.match(html, /Measurements/);
   assert.match(html, /Photos/);
-  assert.match(html, /Pergola fit/);
+  assert.match(html, /Pergola north/);
   assert.match(html, /Concept only · verify in field/);
 });
 
@@ -68,9 +68,10 @@ test("keeps exact dimensions and provisional decisions explicit", async () => {
   assert.match(viewer, /houseBulkWestOfPatio: true/);
   assert.match(viewer, /clearanceFromUpper: 78/);
   assert.match(viewer, /≈ 6′–6″ GAP/);
-  assert.match(viewer, /bbqFit: \{ x: 0, z: 37/);
+  assert.match(viewer, /north: \{ x: 84, z: 37/);
   assert.match(viewer, /original: \{ x: 84, z: 24/);
-  assert.match(viewer, /pergolaBbqFit: true/);
+  assert.match(viewer, /pergolaMovedNorth: true/);
+  assert.match(viewer, /pergolaLeftRightUnchanged: true/);
   assert.match(viewer, /closedPergola: true/);
   assert.match(viewer, /mediaWallIntegrated: true/);
   assert.match(viewer, /leftSideConceptAdded: true/);

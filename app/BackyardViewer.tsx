@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 type Phase = "before" | "after";
 type ViewName = "hero" | "plan" | "bbq" | "firepit" | "seating";
-type PergolaOption = "bbqFit" | "original";
+type PergolaOption = "north" | "original";
 
 const LOCKED = {
   // Client correction: preserve the recorded 23-foot width and use it for
@@ -58,7 +58,7 @@ const PROVISIONAL = {
 const PLAN_PRESENTATION_MIRROR_X = LOCKED.main.x1;
 
 const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: string; note: string }> = {
-  bbqFit: { x: 0, z: 37, label: "BBQ fit", note: "Full island under roof · posts clear counter" },
+  north: { x: 84, z: 37, label: "Moved north", note: "Same alignment · shifted 13″ north" },
   original: { x: 84, z: 24, label: "Original", note: "Reference position · post intersects counter" },
 };
 
@@ -694,12 +694,12 @@ function initializeViewer(
     }
 
     // Integrated 16-foot white media wall, TV, soundbar and floating console.
-    box(g, 5, 84, w, 2.5, 42, w / 2, materials.stucco);
-    box(g, 1.4, 40, 68, 5.7, 61, w / 2, materials.black);
-    box(g, 0.9, 35, 62, 6.9, 61, w / 2, materials.screen);
-    box(g, 1.5, 3, 42, 7.1, 38.5, w / 2, materials.black);
-    box(g, 10, 9, 76, 10, 25, w / 2, materials.whiteMetal);
-    [48, 144].forEach((z) => box(g, 1.5, 14, 7, 6.8, 62, z, materials.charcoal));
+    box(g, 5, 84, w, w - 2.5, 42, w / 2, materials.stucco);
+    box(g, 1.4, 40, 68, w - 5.7, 61, w / 2, materials.black);
+    box(g, 0.9, 35, 62, w - 6.9, 61, w / 2, materials.screen);
+    box(g, 1.5, 3, 42, w - 7.1, 38.5, w / 2, materials.black);
+    box(g, 10, 9, 76, w - 10, 25, w / 2, materials.whiteMetal);
+    [48, 144].forEach((z) => box(g, 1.5, 14, 7, w - 6.8, 62, z, materials.charcoal));
 
     // Centered three-blade ceiling fan.
     cylinder(pergolaRoofGroup, 2.1, 12, w / 2, 97, w / 2, materials.charcoal, 20);
@@ -796,7 +796,7 @@ function initializeViewer(
   addDimension(afterDimensions, new THREE.Vector3(28, 52, 72), new THREE.Vector3(138, 52, 72), "ARMS 9′–2″");
   addDimension(afterDimensions, new THREE.Vector3(68, 8, 151), new THREE.Vector3(138, 8, 151), "COOK 5′–10″");
   addDimension(afterDimensions, new THREE.Vector3(103, 8, 124), new THREE.Vector3(103, 8, 178), "4′–6″ CLEAR");
-  addDimension(afterDimensions, new THREE.Vector3(0, 122, 23), new THREE.Vector3(192, 122, 23), "PERGOLA 16′–0″");
+  addDimension(afterDimensions, new THREE.Vector3(84, 122, 23), new THREE.Vector3(276, 122, 23), "PERGOLA 16′–0″");
   addDimension(afterDimensions, new THREE.Vector3(374, 52, 294), new THREE.Vector3(374, 52, 546), "PLANTER LEG 21′–0″");
   addDimension(afterDimensions, new THREE.Vector3(180, 8, 420), new THREE.Vector3(180, 8, 498), "≈ 6′–6″ GAP");
   addDimension(afterPaverDimensions, new THREE.Vector3(0, 7, 18), new THREE.Vector3(6, 7, 18), "6″ BORDER", new THREE.Vector3(0, 0, 10));
@@ -829,7 +829,7 @@ function initializeViewer(
 
   let phase: Phase = "after";
   let measurementVisible = false;
-  let pergolaOption: PergolaOption = "bbqFit";
+  let pergolaOption: PergolaOption = "north";
   let tween:
     | {
         start: number;
@@ -860,7 +860,8 @@ function initializeViewer(
         patioNorthEdgeTouchesMain: LOCKED.patio.z1 === LOCKED.main.z0,
         patioRoofMatchesOverlay: true,
         houseBulkWestOfPatio: true,
-        pergolaBbqFit: true,
+        pergolaMovedNorth: true,
+        pergolaLeftRightUnchanged: true,
         closedPergola: true,
         mediaWallIntegrated: true,
         leftSideConceptAdded: true,
@@ -875,8 +876,8 @@ function initializeViewer(
     conflictGroup.clear();
     const p = PERGOLA_OPTIONS[option];
     pergolaGroup.position.set(p.x, 0, p.z);
-    // Keep the original sketch position available for comparison; the default
-    // option shifts the roof west and north so the entire U-island is covered.
+    // Keep the original sketch position available for comparison. The preferred
+    // option preserves its X alignment and moves it only north along the pad.
     const postX = p.x + 8;
     const postZ = p.z + LOCKED.pergola.depth - 8;
     const active = option === "original";
@@ -888,7 +889,7 @@ function initializeViewer(
       conflictGroup.add(label);
       onConflict("Post on counter", true);
     } else {
-      onConflict("BBQ fully covered", false);
+      onConflict("Post clear", false);
     }
     pergolaOption = option;
     updateDebug();
@@ -969,7 +970,7 @@ function initializeViewer(
   });
   resize();
   setPhase("after");
-  updateConflict("bbqFit");
+  updateConflict("north");
   setView("hero", true);
   updateDebug();
 
@@ -1020,8 +1021,8 @@ export default function BackyardViewer() {
   const [phase, setPhaseState] = useState<Phase>("after");
   const [activeView, setActiveView] = useState<ViewName>("hero");
   const [measurements, setMeasurementsState] = useState(false);
-  const [pergola, setPergolaState] = useState<PergolaOption>("bbqFit");
-  const [conflict, setConflict] = useState({ label: "BBQ fully covered", active: false });
+  const [pergola, setPergolaState] = useState<PergolaOption>("north");
+  const [conflict, setConflict] = useState({ label: "Post clear", active: false });
   const [notesOpen, setNotesOpen] = useState(false);
   const [referencesOpen, setReferencesOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -1106,7 +1107,7 @@ export default function BackyardViewer() {
 
       {phase === "after" && (
         <div className={`conflict-badge ${conflict.active ? "is-conflict" : "is-clear"}`} role="status">
-          <span>{conflict.active ? "Original conflict" : "Pergola fit"}</span>
+          <span>{conflict.active ? "Original conflict" : "Pergola north"}</span>
           <strong>{conflict.label}</strong>
         </div>
       )}
