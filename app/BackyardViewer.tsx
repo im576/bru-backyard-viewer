@@ -50,6 +50,11 @@ const PROVISIONAL = {
   },
 } as const;
 
+// Rev 03 dimensions remain in their written plan coordinates. The supplied
+// north-up correction establishes that those plan X coordinates must be
+// mirrored into Three.js world X so east/right reads correctly from the patio.
+const PLAN_MIRROR_X = LOCKED.main.x1;
+
 const PERGOLA_OPTIONS: Record<PergolaOption, { x: number; z: number; label: string; note: string }> = {
   nominal: { x: 84, z: 24, label: "Rev 03", note: "Roof shelters cook zone · southeast post lands on counter" },
   north13: { x: 84, z: 37, label: "+13″ north", note: "Rev 03 constructability option · post clears counter" },
@@ -387,6 +392,11 @@ function initializeViewer(
   scene.add(context, beforeGroup, afterGroup, measurementGroup);
   afterGroup.add(afterFixed, provisionalGroup, pergolaGroup, conflictGroup);
   measurementGroup.add(beforeDimensions, afterDimensions);
+  afterGroup.name = "After layout · mirrored to match supplied north-up sketch";
+  afterGroup.position.x = PLAN_MIRROR_X;
+  afterGroup.scale.x = -1;
+  afterDimensions.position.x = PLAN_MIRROR_X;
+  afterDimensions.scale.x = -1;
   measurementGroup.visible = false;
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(860, 1020), materials.ground);
@@ -670,9 +680,9 @@ function initializeViewer(
     return texture;
   }
 
-  function textSprite(text: string, scale = 56, accent?: string) {
+  function textSprite(text: string, scale = 56, accent?: string, cancelPlanMirror = false) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(text, accent), transparent: true, depthTest: false }));
-    sprite.scale.set(scale, scale / 4, 1);
+    sprite.scale.set(cancelPlanMirror ? -scale : scale, scale / 4, 1);
     sprite.renderOrder = 30;
     return sprite;
   }
@@ -696,7 +706,7 @@ function initializeViewer(
     const tick = Math.abs(direction.x) > Math.abs(direction.z) ? new THREE.Vector3(0, 0, 6) : new THREE.Vector3(6, 0, 0);
     lineBetween(group, a.clone().sub(tick), a.clone().add(tick), material);
     lineBetween(group, b.clone().sub(tick), b.clone().add(tick), material);
-    const label = textSprite(text, Math.max(50, text.length * 4.8));
+    const label = textSprite(text, Math.max(50, text.length * 4.8), undefined, group === afterDimensions);
     label.position.copy(a).add(b).multiplyScalar(0.5).add(labelOffset);
     label.position.y += 8;
     group.add(label);
@@ -732,22 +742,24 @@ function initializeViewer(
   const datumLabel = textSprite("DATUM 0,0", 54);
   datumLabel.position.set(0, 15, -7);
   measurementGroup.add(datumLabel);
-  const bbqStatus = textSprite("BBQ POSITION · UNVERIFIED", 108, "#e6a16a");
+  const bbqStatus = textSprite("BBQ POSITION · UNVERIFIED", 108, "#e6a16a", true);
   bbqStatus.position.set(83, 72, 232);
   afterDimensions.add(bbqStatus);
-  const planterStatus = textSprite("PLANTER LOCATION · UNVERIFIED", 124, "#e6a16a");
+  const planterStatus = textSprite("PLANTER LOCATION · UNVERIFIED", 124, "#e6a16a", true);
   planterStatus.position.set(234, 62, 596);
   afterDimensions.add(planterStatus);
-  const firepitStatus = textSprite("CONSTRUCTION · UNVERIFIED", 112, "#e6a16a");
+  const firepitStatus = textSprite("CONSTRUCTION · UNVERIFIED", 112, "#e6a16a", true);
   firepitStatus.position.set(138, 48, 384);
   afterDimensions.add(firepitStatus);
-  const treeStatus = textSprite("TREE REMOVED · CONFIRMED", 112, "#9fc6af");
-  treeStatus.position.set(282, 34, 292);
+  const treeStatus = textSprite("TREE REMOVED · CONFIRMED", 112, "#9fc6af", true);
+  // The existing tree belongs to the fixed photo context, not the mirrored
+  // proposed layout, so pre-compensate its X anchor inside afterDimensions.
+  treeStatus.position.set(PLAN_MIRROR_X - 282, 34, 292);
   afterDimensions.add(treeStatus);
-  const projectOrientation = textSprite("PROJECT AREA · RIGHT FROM PATIO", 126, "#e37b43");
+  const projectOrientation = textSprite("PROJECT AREA · RIGHT FROM PATIO", 126, "#e37b43", true);
   projectOrientation.position.set(96, 22, 270);
   afterDimensions.add(projectOrientation);
-  const pergolaStatus = textSprite("PLACEMENT / HEIGHT / ROOF · UNVERIFIED", 154, "#e6a16a");
+  const pergolaStatus = textSprite("PLACEMENT / HEIGHT / ROOF · UNVERIFIED", 154, "#e6a16a", true);
   pergolaStatus.position.set(96, 132, 96);
   pergolaStatus.visible = false;
   pergolaGroup.add(pergolaStatus);
@@ -778,6 +790,7 @@ function initializeViewer(
         treeRemovedAfter: true,
         turfOmitted: true,
         renovationRightFromPatio: true,
+        afterLayoutMirrored: true,
         planterClearanceApprox: PROVISIONAL.planter.clearanceFromUpper,
         rendererPixelRatio: renderer.getPixelRatio(),
       },
@@ -796,7 +809,7 @@ function initializeViewer(
     if (active) {
       box(conflictGroup, 9, 108, 9, postX, 54, postZ, materials.conflict);
       outlineBox(conflictGroup, 9, 108, 9, postX, 54, postZ, 0xf05848);
-      const label = textSprite("POST ON COUNTER", 92, "#f05848");
+      const label = textSprite("POST ON COUNTER", 92, "#f05848", true);
       label.position.set(postX, 118, postZ);
       conflictGroup.add(label);
       onConflict("5″ post on BBQ counter", true);
@@ -810,9 +823,9 @@ function initializeViewer(
   const presets: Record<ViewName, { position: THREE.Vector3; target: THREE.Vector3 }> = {
     hero: { position: new THREE.Vector3(188, 78, -96), target: new THREE.Vector3(195, 22, 184) },
     plan: { position: new THREE.Vector3(150, 1320, 180), target: new THREE.Vector3(150, 0, 180) },
-    bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(83, 27, 151) },
+    bbq: { position: new THREE.Vector3(-86, 126, 40), target: new THREE.Vector3(193, 27, 151) },
     firepit: { position: new THREE.Vector3(-48, 152, 522), target: new THREE.Vector3(138, 12, 384) },
-    seating: { position: new THREE.Vector3(244, 100, 150), target: new THREE.Vector3(90, 27, 151) },
+    seating: { position: new THREE.Vector3(244, 100, 150), target: new THREE.Vector3(186, 27, 151) },
   };
   let currentView: ViewName = "hero";
 
